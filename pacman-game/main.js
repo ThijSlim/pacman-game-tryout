@@ -438,11 +438,7 @@ class Ghost extends Phaser.GameObjects.Graphics {
     }
 
     // Find path to Pacman
-    // this.findPathToPacman();
-
-    // Update position to match physics body
-    this.x = this.body.position.x;
-    this.y = this.body.position.y;
+    this.findPathToPacman();
   }
 
   findPathToPacman() {
