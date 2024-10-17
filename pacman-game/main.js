@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import EasyStar from "easystarjs";
 
 const config = {
   type: Phaser.AUTO,
@@ -30,6 +31,84 @@ function create() {
   // Create Pacman instance
   this.pacman = new Pacman(this, 400, 300);
 
+  this.tileSize = 32; // or whatever size suits your game
+  this.grid = [];
+
+  this.mazeLayout = [
+    [
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1,
+    ],
+    [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      0, 1,
+    ],
+    [
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 1,
+    ],
+    [
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1,
+    ],
+  ];
+
+  this.mazeWidth = this.mazeLayout[0].length;
+  this.mazeHeight = this.mazeLayout.length;
+
+  const isWall = (x, y) => {
+    // Ensure x and y are within the bounds of the maze
+    if (x < 0 || x >= this.mazeWidth || y < 0 || y >= this.mazeHeight) {
+      return true; // Treat out-of-bounds as walls
+    }
+
+    // Return true if the mazeLayout at (x, y) is 1 (wall)
+    return this.mazeLayout[y][x] === 1;
+  };
+
+  // Create pathfinding grid
+  for (let y = 0; y < this.mazeHeight; y++) {
+    const row = [];
+    for (let x = 0; x < this.mazeWidth; x++) {
+      const tile = isWall(x, y) ? 1 : 0;
+      row.push(tile);
+    }
+    this.grid.push(row);
+  }
+
+  // Initialize EasyStar
+  this.easystar = new EasyStar.js();
+  this.easystar.setGrid(this.grid);
+  this.easystar.setAcceptableTiles([0]); // 0 represents open path
+
   // Create a group for walls
   this.walls = this.physics.add.staticGroup();
 
@@ -41,26 +120,6 @@ function create() {
     { x: 680, y: 100, width: 20, height: 420 },
     // Add more walls as needed
   ];
-
-  wallData.forEach((wall) => {
-    // Create a Graphics object for the wall
-    const wallGraphics = this.add.graphics();
-    wallGraphics.fillStyle(0x0000ff, 1); // Blue color
-    wallGraphics.fillRect(0, 0, wall.width, wall.height);
-
-    // Set the position of the wall
-    wallGraphics.setPosition(wall.x, wall.y);
-
-    // Enable physics on the wallGraphics
-    this.physics.add.existing(wallGraphics, true);
-
-    // Adjust the body size and offset to match the graphics
-    wallGraphics.body.setSize(wall.width, wall.height);
-    wallGraphics.body.setOffset(0, 0);
-
-    // Add wallGraphics to the walls group
-    this.walls.add(wallGraphics);
-  });
 
   // Enable collision between Pacman and walls
   this.physics.add.collider(this.pacman, this.walls);
@@ -140,12 +199,49 @@ function create() {
     dot.destroy();
     this.score += 10;
     this.scoreText.setText("Score: " + this.score);
+
+    // Check if all dots are eaten
+    if (this.dots.countActive(true) === 0) {
+      // Proceed to next level or restart
+      this.scene.restart();
+    }
   }
 
   this.lives = 3;
   this.livesText = this.add.text(16, 40, "Lives: 3", {
     fontSize: "24px",
     fill: "#fff",
+  });
+
+  this.mazeLayout.forEach((row, rowIndex) => {
+    row.forEach((tile, colIndex) => {
+      const x = colIndex * this.tileSize;
+      const y = rowIndex * this.tileSize;
+  
+      if (tile === 1) {
+        // Create wall at (x, y)
+        const wall = this.add.rectangle(
+          x + this.tileSize / 2,
+          y + this.tileSize / 2,
+          this.tileSize,
+          this.tileSize,
+          0x0000ff
+        );
+        wall.setOrigin(0.5, 0.5);
+        this.physics.add.existing(wall, true);
+        this.walls.add(wall);
+      } else if (tile === 0) {
+        // Create dot at (x, y)
+        const dot = this.add.circle(
+          x + this.tileSize / 2,
+          y + this.tileSize / 2,
+          4,
+          0xffffff
+        );
+        this.physics.add.existing(dot, true);
+        this.dots.add(dot);
+      }
+    });
   });
 }
 
@@ -169,6 +265,8 @@ class Pacman extends Phaser.GameObjects.Graphics {
     this.speed = 160;
     this.angleValue = 0; // Used for mouth animation
 
+
+
     // Add to the scene
     this.scene.add.existing(this);
 
@@ -182,20 +280,19 @@ class Pacman extends Phaser.GameObjects.Graphics {
     // Initial drawing
     this.drawPacman();
   }
-
   drawPacman() {
     this.clear();
     this.fillStyle(0xffff00, 1); // Yellow color
-
+  
     // Calculate mouth angle for animation
     const openAngle = 0.2 + 0.1 * Math.sin(this.scene.time.now / 100);
-
+  
     // Draw Pacman as a sector (arc)
     this.beginPath();
-    this.moveTo(this.size, this.size);
+    this.moveTo(0, 0);
     this.arc(
-      this.size,
-      this.size,
+      0,
+      0,
       this.size,
       Phaser.Math.DegToRad(360 * openAngle),
       Phaser.Math.DegToRad(360 * (1 - openAngle)),
@@ -203,7 +300,7 @@ class Pacman extends Phaser.GameObjects.Graphics {
     );
     this.closePath();
     this.fill();
-
+  
     // Rotate Pacman based on direction
     let rotation = 0;
     switch (this.direction) {
@@ -224,21 +321,84 @@ class Pacman extends Phaser.GameObjects.Graphics {
     this.setRotation(Phaser.Math.DegToRad(rotation));
   }
 
+  canMove(direction) {
+    const tileSize = this.scene.tileSize;
+    const mazeLayout = this.scene.mazeLayout;
+
+    // Calculate the grid position Pacman is currently in
+    const gridX = Math.floor((this.x + this.size) / tileSize);
+    const gridY = Math.floor((this.y + this.size) / tileSize);
+
+    // Determine the grid position Pacman wants to move to
+    let targetX = gridX;
+    let targetY = gridY;
+
+    switch (direction) {
+      case "left":
+        targetX -= 1;
+        break;
+      case "right":
+        targetX += 1;
+        break;
+      case "up":
+        targetY -= 1;
+        break;
+      case "down":
+        targetY += 1;
+        break;
+    }
+
+    // Check if the target position is within the maze bounds
+    if (
+      targetX < 0 ||
+      targetX >= mazeLayout[0].length ||
+      targetY < 0 ||
+      targetY >= mazeLayout.length
+    ) {
+      return false;
+    }
+
+    // Return true if the target tile is not a wall (i.e., it's 0)
+    return mazeLayout[targetY][targetX] === 0;
+  }
+
   update(cursors) {
     this.body.setVelocity(0);
 
+    let desiredDirection = this.direction;
+
     if (cursors.left.isDown) {
-      this.body.setVelocityX(-this.speed);
-      this.direction = "left";
+      desiredDirection = "left";
     } else if (cursors.right.isDown) {
-      this.body.setVelocityX(this.speed);
-      this.direction = "right";
+      desiredDirection = "right";
     } else if (cursors.up.isDown) {
-      this.body.setVelocityY(-this.speed);
-      this.direction = "up";
+      desiredDirection = "up";
     } else if (cursors.down.isDown) {
-      this.body.setVelocityY(this.speed);
-      this.direction = "down";
+      desiredDirection = "down";
+    }
+
+    // Check if Pacman can move in the desired direction
+    if (this.canMove(desiredDirection)) {
+      this.direction = desiredDirection;
+    } else if (!this.canMove(this.direction)) {
+      // Stop moving if can't continue in the current direction
+      this.direction = null;
+    }
+
+    // Move in the current direction if possible
+    switch (this.direction) {
+      case "left":
+        this.body.setVelocityX(-this.speed);
+        break;
+      case "right":
+        this.body.setVelocityX(this.speed);
+        break;
+      case "up":
+        this.body.setVelocityY(-this.speed);
+        break;
+      case "down":
+        this.body.setVelocityY(this.speed);
+        break;
     }
 
     // Redraw Pacman to update mouth animation and rotation
@@ -271,6 +431,8 @@ class Ghost extends Phaser.GameObjects.Graphics {
 
     // Draw the ghost
     this.drawGhost(color);
+
+    this.targetPosition = { x: x, y: y };
   }
 
   drawGhost(color) {
@@ -303,9 +465,54 @@ class Ghost extends Phaser.GameObjects.Graphics {
       this.move(direction);
     }
 
+    // Find path to Pacman
+    this.findPathToPacman();
+
     // Update position to match physics body
-    this.x = this.body.x;
-    this.y = this.body.y;
+    this.x = this.body.position.x;
+    this.y = this.body.position.y;
+  }
+
+  findPathToPacman() {
+    const tileSize = this.scene.tileSize;
+
+    const fromX = Math.floor(this.x / tileSize);
+    const fromY = Math.floor(this.y / tileSize);
+    const toX = Math.floor(this.scene.pacman.x / tileSize);
+    const toY = Math.floor(this.scene.pacman.y / tileSize);
+
+    // Check if fromX, fromY, toX, toY are within grid bounds
+    const withinBounds =
+      fromX >= 0 &&
+      fromX < this.scene.mazeWidth &&
+      fromY >= 0 &&
+      fromY < this.scene.mazeHeight &&
+      toX >= 0 &&
+      toX < this.scene.mazeWidth &&
+      toY >= 0 &&
+      toY < this.scene.mazeHeight;
+
+    if (!withinBounds) {
+      console.error("Entity positions are outside the grid bounds.");
+      return;
+    }
+
+    // Proceed with pathfinding
+    this.scene.easystar.findPath(fromX, fromY, toX, toY, (path) => {
+      if (path && path.length > 1) {
+        const nextStep = path[1];
+        this.moveTowards(nextStep.x * tileSize, nextStep.y * tileSize);
+      } else {
+        this.body.setVelocity(0);
+      }
+    });
+
+    this.scene.easystar.calculate();
+  }
+
+  moveTowards(targetX, targetY) {
+    const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+    this.scene.physics.moveTo(this, targetX, targetY, this.speed);
   }
 
   move(direction) {
