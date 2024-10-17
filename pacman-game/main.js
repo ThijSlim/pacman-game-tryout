@@ -30,8 +30,8 @@ function create() {
   this.cursors = this.input.keyboard.createCursorKeys();
   this.tileSize = 32; // or whatever size suits your game
 
-  const initialCol = 12; // Adjust based on your maze layout
-  const initialRow = 9; // Adjust based on your maze layout
+  const initialCol = 2; // Adjust based on your maze layout
+  const initialRow = 2; // Adjust based on your maze layout
   const x = initialCol * this.tileSize;
   const y = initialRow * this.tileSize;
   this.pacman = new Pacman(this, x, y);
@@ -236,7 +236,7 @@ class Pacman extends Phaser.GameObjects.Graphics {
     this.body.setCollideWorldBounds(true);
 
     // Position the physics body to match the graphics
-    this.body.setOffset(0, 0);
+    // this.body.setOffset(0, 0);
 
     // Initial drawing
     this.drawPacman();
