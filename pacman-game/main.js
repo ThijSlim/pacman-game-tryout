@@ -28,11 +28,14 @@ function preload() {
 function create() {
   // Initialize cursors for input
   this.cursors = this.input.keyboard.createCursorKeys();
-
-  // Create Pacman instance
-  this.pacman = new Pacman(this, 400, 300);
-
   this.tileSize = 32; // or whatever size suits your game
+
+  const initialCol = 12; // Adjust based on your maze layout
+  const initialRow = 9; // Adjust based on your maze layout
+  const x = initialCol * this.tileSize;
+  const y = initialRow * this.tileSize;
+  this.pacman = new Pacman(this, x, y);
+
   this.grid = [];
 
   this.mazeLayout = mazeLayout;
@@ -173,7 +176,7 @@ function create() {
     row.forEach((tile, colIndex) => {
       const x = colIndex * this.tileSize;
       const y = rowIndex * this.tileSize;
-  
+
       if (tile === 1) {
         // Create wall at (x, y)
         const wall = this.add.rectangle(
@@ -214,12 +217,13 @@ class Pacman extends Phaser.GameObjects.Graphics {
   constructor(scene, x, y) {
     super(scene);
     this.scene = scene;
-    this.x = x;
-    this.y = y;
     this.size = 16; // Radius of Pacman
     this.direction = "right";
     this.speed = 160;
-    this.angleValue = 0; // Used for mouth animation
+
+    // Set initial position
+    this.x = x;
+    this.y = y;
 
     // Add to the scene
     this.scene.add.existing(this);
@@ -227,9 +231,12 @@ class Pacman extends Phaser.GameObjects.Graphics {
     // Enable physics
     this.scene.physics.world.enable(this);
 
-    // Set the body properties
+    // Adjust the physics body
     this.body.setCircle(this.size);
     this.body.setCollideWorldBounds(true);
+
+    // Position the physics body to match the graphics
+    this.body.setOffset(0, 0);
 
     // Initial drawing
     this.drawPacman();
@@ -238,11 +245,11 @@ class Pacman extends Phaser.GameObjects.Graphics {
   drawPacman() {
     this.clear();
     this.fillStyle(0xffff00, 1); // Yellow color
-  
+
     // Calculate mouth angle for animation
     const openAngle = 0.2 + 0.1 * Math.sin(this.scene.time.now / 100);
-  
-    // Draw Pacman as a sector (arc)
+
+    // Draw Pacman as a sector (arc) centered at (0, 0)
     this.beginPath();
     this.moveTo(0, 0);
     this.arc(
@@ -255,7 +262,7 @@ class Pacman extends Phaser.GameObjects.Graphics {
     );
     this.closePath();
     this.fill();
-  
+
     // Rotate Pacman based on direction
     let rotation = 0;
     switch (this.direction) {
@@ -280,9 +287,13 @@ class Pacman extends Phaser.GameObjects.Graphics {
     const tileSize = this.scene.tileSize;
     const mazeLayout = this.scene.mazeLayout;
 
+    // Use Pacman's center position
+    const centerX = this.x + this.size;
+    const centerY = this.y + this.size;
+
     // Calculate the grid position Pacman is currently in
-    const gridX = Math.floor((this.x + this.size) / tileSize);
-    const gridY = Math.floor((this.y + this.size) / tileSize);
+    const gridX = Math.floor(centerX / tileSize);
+    const gridY = Math.floor(centerY / tileSize);
 
     // Determine the grid position Pacman wants to move to
     let targetX = gridX;
@@ -332,12 +343,22 @@ class Pacman extends Phaser.GameObjects.Graphics {
       desiredDirection = "down";
     }
 
-    // Check if Pacman can move in the desired direction
-    if (this.canMove(desiredDirection)) {
-      this.direction = desiredDirection;
-    } else if (!this.canMove(this.direction)) {
-      // Stop moving if can't continue in the current direction
-      this.direction = null;
+    // Check if Pacman is aligned with the grid
+    const tileSize = this.scene.tileSize;
+    const centerX = this.x + this.size;
+    const centerY = this.y + this.size;
+    const isAlignedWithGrid =
+      Math.abs(centerX % tileSize - tileSize / 2) < 2 &&
+      Math.abs(centerY % tileSize - tileSize / 2) < 2;
+
+    if (isAlignedWithGrid) {
+      // Check if Pacman can move in the desired direction
+      if (this.canMove(desiredDirection)) {
+        this.direction = desiredDirection;
+      } else if (!this.canMove(this.direction)) {
+        // Stop moving if can't continue in the current direction
+        this.direction = null;
+      }
     }
 
     // Move in the current direction if possible
@@ -358,10 +379,6 @@ class Pacman extends Phaser.GameObjects.Graphics {
 
     // Redraw Pacman to update mouth animation and rotation
     this.drawPacman();
-
-    // Update position to match physics body
-    this.x = this.body.x;
-    this.y = this.body.y;
   }
 }
 
@@ -421,7 +438,7 @@ class Ghost extends Phaser.GameObjects.Graphics {
     }
 
     // Find path to Pacman
-    this.findPathToPacman();
+    // this.findPathToPacman();
 
     // Update position to match physics body
     this.x = this.body.position.x;
