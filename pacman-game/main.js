@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import EasyStar from "easystarjs";
+import mazeLayout from "./src/mazelayout";
 
 const config = {
   type: Phaser.AUTO,
@@ -34,52 +35,7 @@ function create() {
   this.tileSize = 32; // or whatever size suits your game
   this.grid = [];
 
-  this.mazeLayout = [
-    [
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1,
-    ],
-    [
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      0, 1,
-    ],
-    [
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 1,
-    ],
-    [
-      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-      1, 1,
-    ],
-  ];
+  this.mazeLayout = mazeLayout;
 
   this.mazeWidth = this.mazeLayout[0].length;
   this.mazeHeight = this.mazeLayout.length;
@@ -265,8 +221,6 @@ class Pacman extends Phaser.GameObjects.Graphics {
     this.speed = 160;
     this.angleValue = 0; // Used for mouth animation
 
-
-
     // Add to the scene
     this.scene.add.existing(this);
 
@@ -280,6 +234,7 @@ class Pacman extends Phaser.GameObjects.Graphics {
     // Initial drawing
     this.drawPacman();
   }
+
   drawPacman() {
     this.clear();
     this.fillStyle(0xffff00, 1); // Yellow color
