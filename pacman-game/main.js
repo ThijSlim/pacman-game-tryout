@@ -71,15 +71,6 @@ function create() {
   // Create a group for walls
   this.walls = this.physics.add.staticGroup();
 
-  // Example walls (define these based on your maze layout)
-  const wallData = [
-    { x: 100, y: 100, width: 600, height: 20 },
-    { x: 100, y: 500, width: 600, height: 20 },
-    { x: 100, y: 100, width: 20, height: 420 },
-    { x: 680, y: 100, width: 20, height: 420 },
-    // Add more walls as needed
-  ];
-
   // Enable collision between Pacman and walls
   this.physics.add.collider(this.pacman, this.walls);
 
