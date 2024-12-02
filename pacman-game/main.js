@@ -168,15 +168,24 @@ function create() {
         .setOrigin(0.5);
     } else {
       // Reset Pacman's position
-      this.pacman.body.setPosition(400, 300);
+      this.pacman.setPosition(x, y);
+      this.pacman.body.setVelocity(0, 0); // Stop any movement
     }
   }
 
   this.score = 0;
-  this.scoreText = this.add.text(16, 16, "Score: 0", {
-    fontSize: "24px",
+  this.scoreText = this.add.text(this.scale.width / 2, 0, "Score: 0", {
+    fontSize: "20px",
     fill: "#fff",
-  });
+    fontFamily: "Arial",
+    fontStyle: "bold",
+    align: "center",
+  }).setOrigin(0.5, 0);
+  this.scoreText.setDepth(100);
+
+  
+
+  
 
   function eatDot(pacman, dot) {
     dot.destroy();
@@ -191,10 +200,14 @@ function create() {
   }
 
   this.lives = 3;
-  this.livesText = this.add.text(16, 40, "Lives: 3", {
-    fontSize: "24px",
+  this.livesText = this.add.text(this.scale.width / 2, 24, "Lives: 3", {
+    fontSize: "20px",
     fill: "#fff",
-  });
+    fontFamily: "Arial",
+    fontStyle: "bold",
+    align: "center",
+  }).setOrigin(0.5, 0);
+  this.livesText.setDepth(100);
 
   this.mazeLayout.forEach((row, rowIndex) => {
     row.forEach((tile, colIndex) => {
