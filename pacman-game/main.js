@@ -22,6 +22,10 @@ const config = {
 const game = new Phaser.Game(config);
 
 function preload() {
+  this.load.spritesheet("pacman", "/pacman.png", {
+    frameWidth: 16, // Adjust based on your sprite sheet
+    frameHeight: 16,
+  });
   // Load game assets here
 }
 
@@ -34,6 +38,35 @@ function create() {
   const initialRow = 2; // Adjust based on your maze layout
   const x = initialCol * this.tileSize;
   const y = initialRow * this.tileSize;
+
+  this.anims.create({
+    key: "move_right",
+    frames: this.anims.generateFrameNumbers("pacman", { start: 0, end: 1 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+
+  this.anims.create({
+    key: "move_left",
+    frames: this.anims.generateFrameNumbers("pacman", { start: 2, end: 3 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+
+  this.anims.create({
+    key: "move_up",
+    frames: this.anims.generateFrameNumbers("pacman", { start: 4, end: 5 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+
+  this.anims.create({
+    key: "move_down",
+    frames: this.anims.generateFrameNumbers("pacman", { start: 6, end: 7 }),
+    frameRate: 10,
+    repeat: -1,
+  });
+
   this.pacman = new Pacman(this, x, y);
 
   this.grid = [];
@@ -203,90 +236,35 @@ function update(time, delta) {
     ghost.update();
   });
 }
-
-class Pacman extends Phaser.GameObjects.Graphics {
+class Pacman extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
-    super(scene);
+    super(scene, x, y, "pacman");
     this.scene = scene;
-    this.size = 16; // Radius of Pacman
     this.direction = "right";
-    this.speed = 160;
+    this.desiredDirection = "right";
+    this.speed = this.scene.tileSize * 5;
 
-    // Set initial position
-    this.x = x;
-    this.y = y;
-
-    // Add to the scene
+    // Add Pacman to the scene
     this.scene.add.existing(this);
 
-    // Enable physics
+    this.setScale(1.6);
+
+    // Enable physics on Pacman
     this.scene.physics.world.enable(this);
 
-    // Adjust the physics body
-    this.body.setCircle(this.size);
+    // Set initial position and properties
+    this.setOrigin(-0.5, -0.5);
     this.body.setCollideWorldBounds(true);
 
-    // Position the physics body to match the graphics
-    // this.body.setOffset(0, 0);
-
-    // Initial drawing
-    this.drawPacman();
-  }
-
-  drawPacman() {
-    this.clear();
-    this.fillStyle(0xffff00, 1); // Yellow color
-
-    // Calculate mouth angle for animation
-    const openAngle = 0.2 + 0.1 * Math.sin(this.scene.time.now / 100);
-
-    // Draw Pacman as a sector (arc) centered at (0, 0)
-    this.beginPath();
-    this.moveTo(0, 0);
-    this.arc(
-      0,
-      0,
-      this.size,
-      Phaser.Math.DegToRad(360 * openAngle),
-      Phaser.Math.DegToRad(360 * (1 - openAngle)),
-      false
-    );
-    this.closePath();
-    this.fill();
-
-    // Rotate Pacman based on direction
-    let rotation = 0;
-    switch (this.direction) {
-      case "up":
-        rotation = -90;
-        break;
-      case "down":
-        rotation = 90;
-        break;
-      case "left":
-        rotation = 180;
-        break;
-      case "right":
-      default:
-        rotation = 0;
-        break;
-    }
-    this.setRotation(Phaser.Math.DegToRad(rotation));
+    // Play the initial animation
+    this.anims.play("move_right");
   }
 
   canMove(direction) {
     const tileSize = this.scene.tileSize;
     const mazeLayout = this.scene.mazeLayout;
-
-    // Use Pacman's center position
-    const centerX = this.x + this.size;
-    const centerY = this.y + this.size;
-
-    // Calculate the grid position Pacman is currently in
-    const gridX = Math.floor(centerX / tileSize);
-    const gridY = Math.floor(centerY / tileSize);
-
-    // Determine the grid position Pacman wants to move to
+    const gridX = Math.floor(this.x / tileSize);
+    const gridY = Math.floor(this.y / tileSize);
     let targetX = gridX;
     let targetY = gridY;
 
@@ -305,7 +283,6 @@ class Pacman extends Phaser.GameObjects.Graphics {
         break;
     }
 
-    // Check if the target position is within the maze bounds
     if (
       targetX < 0 ||
       targetX >= mazeLayout[0].length ||
@@ -315,61 +292,89 @@ class Pacman extends Phaser.GameObjects.Graphics {
       return false;
     }
 
-    // Return true if the target tile is not a wall (i.e., it's 0)
     return mazeLayout[targetY][targetX] === 0;
   }
 
   update(cursors) {
-    this.body.setVelocity(0);
-
-    let desiredDirection = this.direction;
-
+    // Check for input and set desired direction
     if (cursors.left.isDown) {
-      desiredDirection = "left";
+      this.desiredDirection = "left";
     } else if (cursors.right.isDown) {
-      desiredDirection = "right";
+      this.desiredDirection = "right";
     } else if (cursors.up.isDown) {
-      desiredDirection = "up";
+      this.desiredDirection = "up";
     } else if (cursors.down.isDown) {
-      desiredDirection = "down";
+      this.desiredDirection = "down";
     }
 
-    // Check if Pacman is aligned with the grid
     const tileSize = this.scene.tileSize;
-    const centerX = this.x + this.size;
-    const centerY = this.y + this.size;
-    const isAlignedWithGrid =
-      Math.abs(centerX % tileSize - tileSize / 2) < 2 &&
-      Math.abs(centerY % tileSize - tileSize / 2) < 2;
+    const halfTileSize = tileSize / 2;
 
-    if (isAlignedWithGrid) {
-      // Check if Pacman can move in the desired direction
-      if (this.canMove(desiredDirection)) {
-        this.direction = desiredDirection;
-      } else if (!this.canMove(this.direction)) {
-        // Stop moving if can't continue in the current direction
-        this.direction = null;
+    // Get current position on the grid
+    const currentTileX = Math.floor(this.x / tileSize);
+    const currentTileY = Math.floor(this.y / tileSize);
+
+    // Calculate distance to the center of the current tile
+    const tileCenterX = currentTileX * tileSize + halfTileSize;
+    const tileCenterY = currentTileY * tileSize + halfTileSize;
+    const distanceToTileCenterX = this.x - tileCenterX;
+    const distanceToTileCenterY = this.y - tileCenterY;
+
+    const alignmentTolerance = 5;
+
+    // If desiredDirection is different from current direction
+    if (this.desiredDirection !== this.direction) {
+      // Check if we can move in desiredDirection
+      if (this.canMove(this.desiredDirection)) {
+        console.log("Changing direction ", this.desiredDirection);
+        // Check alignment based on the axis
+        console.log("distanceToTileCenterX", distanceToTileCenterX);
+        console.log("distanceToTileCenterY", distanceToTileCenterY);
+        if (
+          (this.direction === "left" || this.direction === "right") &&
+          Math.abs(distanceToTileCenterY) < alignmentTolerance
+        ) {
+          // Align Y position
+          this.y = tileCenterY;
+          this.direction = this.desiredDirection;
+        } else if (
+          (this.direction === "up" || this.direction === "down") &&
+          Math.abs(distanceToTileCenterX) < alignmentTolerance
+        ) {
+          // Align X position
+          console.log("Aligning X position");
+          this.x = tileCenterX;
+          this.direction = this.desiredDirection;
+        }
       }
     }
 
-    // Move in the current direction if possible
-    switch (this.direction) {
+    // Set velocity based on the current direction
+    // this.body.setVelocity(0);
+
+    console.log("Current direction", this.direction);
+
+    switch (this.desiredDirection) {
       case "left":
         this.body.setVelocityX(-this.speed);
+        this.anims.play("move_left", true);
         break;
       case "right":
         this.body.setVelocityX(this.speed);
+        this.anims.play("move_right", true);
         break;
       case "up":
         this.body.setVelocityY(-this.speed);
+        this.anims.play("move_up", true);
         break;
       case "down":
         this.body.setVelocityY(this.speed);
+        this.anims.play("move_down", true);
+        break;
+      default:
+        this.anims.stop();
         break;
     }
-
-    // Redraw Pacman to update mouth animation and rotation
-    this.drawPacman();
   }
 }
 
