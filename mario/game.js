@@ -253,7 +253,7 @@ class Platforms {
     groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
     groundGraphics.destroy();
 
-    // Create ground blocks across the bottom of the screen
+    // Create ground blocks across the bottom of the screen  
     for (let x = 0; x <= worldWidth; x += this.blockSize) {
       this.group
         .create(x, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
