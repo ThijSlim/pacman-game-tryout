@@ -350,6 +350,10 @@ class Platforms {
     this.createPlatformRowAtGrid(9, 5, 1, 'platformBlock'); // At gridX=13, gridY=5
     this.createPlatformRowAtGrid(11, 5, 1, 'platformBlock'); // At gridX=13, gridY=5
     this.createPlatformRowAtGrid(13, 5, 1, 'platformBlock'); // At gridX=24, gridY=5
+  
+    this.createPlatformRowAtGrid(16, 2, 1, 'platformBlock'); // At gridX=24, gridY=5
+    this.createPlatformRowAtGrid(26, 2, 1, 'platformBlock'); // At gridX=24, gridY=5
+  
   }
 
   createQuestionBlocks() {
