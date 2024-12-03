@@ -17,8 +17,12 @@ const config = {
 };
 
 let player;
+let goomba1;
+let goomba2;
 let platforms;
 let cursors;
+let score = 0;
+let scoreText;
 
 const game = new Phaser.Game(config);
 
@@ -32,6 +36,12 @@ function create() {
   const background = this.add.graphics();
   background.fillStyle(0x87ceeb, 1); // Light blue color
   background.fillRect(0, 0, worldWidth, 600);
+
+  scoreText = this.add.text(16, 16, 'Score: 0', {
+    fontSize: '32px',
+    fill: '#000',
+  });
+  scoreText.setScrollFactor(0);
 
   // Set the physics world bounds to the new world size
   this.physics.world.setBounds(0, 0, worldWidth, 600);
@@ -52,12 +62,14 @@ function create() {
   }
 
   // Create two Goombas
-  const goomba1 = new Goomba(this, 600, 500);
-  const goomba2 = new Goomba(this, 800, 500);
+   goomba1 = new Goomba(this, 600, 500, 1);
+   goomba2 = new Goomba(this, 800, 500, -1);
 
-  // Add collision between Goombas and platforms
   this.physics.add.collider(goomba1.sprite, platforms.group);
   this.physics.add.collider(goomba2.sprite, platforms.group);
+
+    // Add collision between Goombas themselves with collision callback
+    this.physics.add.collider(goomba1.sprite, goomba2.sprite, reverseGoombaDirection, null, this);
 
   // Add collision between Mario and Goombas
   this.physics.add.collider(player.sprite, goomba1.sprite, hitGoomba, null, this);
@@ -77,6 +89,23 @@ function create() {
 function update() {
   // Update the player
   player.update(cursors);
+
+    // Update Goombas
+    goomba1.update();
+    goomba2.update();
+}
+
+function reverseGoombaDirection(goombaSprite1, goombaSprite2) {
+  const goomba1 = goombaSprite1.goomba;
+  const goomba2 = goombaSprite2.goomba;
+
+  // Reverse direction of Goomba 1
+  goomba1.direction *= -1;
+  goomba1.sprite.setVelocityX(goomba1.speed * goomba1.direction);
+
+  // Reverse direction of Goomba 2
+  goomba2.direction *= -1;
+  goomba2.sprite.setVelocityX(goomba2.speed * goomba2.direction);
 }
 
 function hitGoomba(playerSprite, goombaSprite) {
@@ -94,18 +123,21 @@ function hitGoomba(playerSprite, goombaSprite) {
 
 // Function to handle collision between Mario and blocks
 function hitBlock(playerSprite, block) {
-  // Check if the block is the question block and hasn't been activated yet
   if (block.texture.key === 'questionBlock' && !block.activated) {
-    // Check if collision is from below
     if (playerSprite.body.touching.up && block.body.touching.down) {
-      // Mark block as activated to prevent multiple activations
       block.activated = true;
-
-      // Change the block's texture to indicate it has been used
       block.setTexture('usedBlock');
 
-      // Spawn the power-up
-      spawnPowerUp.call(this, block.x + block.width / 2, block.y - block.height);
+      if (block.contains === 'coin') {
+        // Spawn a coin
+        spawnCoin.call(this, block.x + block.width / 2, block.y - block.height);
+        // Increase score
+        score += 10;
+        scoreText.setText('Score: ' + score);
+      } else if (block.contains === 'powerUp') {
+        // Spawn the power-up
+        spawnPowerUp.call(this, block.x + block.width / 2, block.y - block.height);
+      }
     }
   }
 }
@@ -141,6 +173,30 @@ function spawnPowerUp(x, y) {
 
   // Add overlap between player and power-up
   this.physics.add.overlap(player.sprite, powerUp, collectPowerUp, null, this);
+}
+
+function spawnCoin(x, y) {
+  if (!this.textures.exists('coin')) {
+    const coinGraphics = this.add.graphics();
+    coinGraphics.fillStyle(0xFFFF00, 1); // Yellow color
+    coinGraphics.fillCircle(15, 15, 15);
+    coinGraphics.generateTexture('coin', 30, 30);
+    coinGraphics.destroy();
+  }
+
+  const coin = this.physics.add.sprite(x, y, 'coin');
+  coin.body.allowGravity = false;
+
+  this.tweens.add({
+    targets: coin,
+    y: y - 50,
+    alpha: 0,
+    duration: 800,
+    ease: 'Power1',
+    onComplete: () => {
+      coin.destroy();
+    },
+  });
 }
 
 // Function to handle collecting the power-up
@@ -267,7 +323,7 @@ class Platforms {
     this.group = this.scene.physics.add.staticGroup();
 
     // Define block size
-    this.blockSize = 50; // Size of each block in pixels
+    this.blockSize = 32; // Size of each block in pixels
 
     // Create ground blocks
     this.createGround(worldWidth);
@@ -276,24 +332,9 @@ class Platforms {
     this.createLevelPlatforms();
 
     // Create question blocks
-    this.createQuestionBlock(280, this.scene.scale.height - this.blockSize * 4.5);
-  }
+    this.createQuestionBlocks();
 
-  createGround(worldWidth) {
-    // Create platform graphics for ground blocks
-    const groundGraphics = this.scene.add.graphics();
-    groundGraphics.fillStyle(0x8B4513, 1); // Brown color for ground
-    groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-    groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
-    groundGraphics.destroy();
-
-    // Create ground blocks across the bottom of the screen  
-    for (let x = 0; x <= worldWidth; x += this.blockSize) {
-      this.group
-        .create(x, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
-        .setOrigin(0, 0.5)
-        .refreshBody();
-    }
+    // Create question blocks
   }
 
   createLevelPlatforms() {
@@ -306,25 +347,21 @@ class Platforms {
       platformGraphics.destroy();
     }
 
-    // Platforms placed 3 blocks above the ground
-    // Original platform
-    this.createPlatformRow(
-      490,
-      this.scene.scale.height - this.blockSize * 3.5, // Adjusted Y position
-      4,
-      'platformBlock'
-    );
-
-    // New platform further to the right
-    this.createPlatformRow(
-      1200, // New X position further to the right
-      this.scene.scale.height - this.blockSize * 3.5,
-      5, // Number of blocks in the new platform
-      'platformBlock'
-    );
+    this.createPlatformRowAtGrid(9, 5, 1, 'platformBlock'); // At gridX=13, gridY=5
+    this.createPlatformRowAtGrid(11, 5, 1, 'platformBlock'); // At gridX=13, gridY=5
+    this.createPlatformRowAtGrid(13, 5, 1, 'platformBlock'); // At gridX=24, gridY=5
   }
 
-  createPlatformRow(startX, y, numBlocks, texture) {
+  createQuestionBlocks() {
+    this.createQuestionBlock(6, 5, 'coin'); // Contains power-up
+    this.createQuestionBlock(10, 5, 'coin');    // Contains coin
+    this.createQuestionBlock(12, 5, 'coin');    // Contains coin
+    this.createQuestionBlock(11, 9, 'powerUp');    // Contains coin
+  }
+
+  createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
+    const startX = startGridX * this.blockSize;
+    const y = this.scene.scale.height - gridY * this.blockSize;
     for (let i = 0; i < numBlocks; i++) {
       this.group
         .create(startX + i * this.blockSize, y, texture)
@@ -333,7 +370,29 @@ class Platforms {
     }
   }
 
-  createQuestionBlock(x, y) {
+  createGround(worldWidth) {
+    // Create platform graphics for ground blocks
+    const groundGraphics = this.scene.add.graphics();
+    groundGraphics.fillStyle(0x8B4513, 1); // Brown color for ground
+    groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+    groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
+    groundGraphics.destroy();
+
+    const numBlocks = Math.ceil(worldWidth / this.blockSize);
+    for (let x = 0; x <= numBlocks; x++) {
+      this.group
+        .create(x * this.blockSize, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
+        .setOrigin(0, 0.5)
+        .refreshBody();
+    }
+  }
+
+
+
+  createQuestionBlock(gridX, gridY, contains) {
+    const x = gridX * this.blockSize;
+    const y = this.scene.scale.height - gridY * this.blockSize;
+
     // Create question block graphics if not already created
     if (!this.scene.textures.exists('questionBlock')) {
       const questionBlockGraphics = this.scene.add.graphics();
@@ -354,31 +413,42 @@ class Platforms {
 
     // Add the question block to the group and keep a reference
     const questionBlock = this.group
-      .create(x, y, 'questionBlock')
-      .setOrigin(0, 0.5)
-      .refreshBody();
+    .create(x, y, 'questionBlock')
+    .setOrigin(0, 0.5)
+    .refreshBody();
 
-    // Custom property to identify the question block
-    questionBlock.isQuestionBlock = true;
+    questionBlock.contains = contains;
+    questionBlock.activated = false;
   }
 }
 
 class Goomba {
-  constructor(scene, x, y) {
+  constructor(scene, x, y, direction = -1) {
     this.scene = scene;
+    this.speed = 50; // Base speed
+    this.direction = direction; // -1 for left, 1 for right
     this.sprite = scene.physics.add.sprite(x, y, 'goomba');
 
     // Set Goomba properties
     this.sprite.setCollideWorldBounds(true);
-    this.sprite.setVelocityX(-50); // Move left slowly
-    this.sprite.setBounceX(1); // Bounce when hitting walls
+    this.sprite.setVelocityX(this.speed * this.direction); // Move left or right
 
-    // Enable collision with world bounds
-    this.sprite.body.onWorldBounds = true;
-    scene.physics.world.on('worldbounds', (body) => {
-      if (body.gameObject === this.sprite) {
-        this.sprite.setVelocityX(-this.sprite.body.velocity.x);
-      }
-    });
+    // Link the sprite back to this Goomba instance
+    this.sprite.goomba = this;
+  }
+
+  update() {
+    if(!this.sprite.body?.blocked){
+      return;
+    }
+
+    // Check for collisions with walls and reverse direction
+    if (this.sprite.body.blocked.left || this.sprite.body.touching.left) {
+      this.direction = 1; // Move right
+      this.sprite.setVelocityX(this.speed * this.direction);
+    } else if (this.sprite.body.blocked.right || this.sprite.body.touching.right) {
+      this.direction = -1; // Move left
+      this.sprite.setVelocityX(this.speed * this.direction);
+    }
   }
 }
