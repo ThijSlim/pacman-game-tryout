@@ -42,6 +42,27 @@ function create() {
   // Create the player using the updated Mario class
   player = new Mario(this, 100, 450);
 
+  // Create Goomba texture if it doesn't exist
+  if (!this.textures.exists('goomba')) {
+    const goombaGraphics = this.add.graphics();
+    goombaGraphics.fillStyle(0x8B4513, 1); // Brown color
+    goombaGraphics.fillCircle(16, 16, 16); // Radius of 16 pixels
+    goombaGraphics.generateTexture('goomba', 32, 32);
+    goombaGraphics.destroy();
+  }
+
+  // Create two Goombas
+  const goomba1 = new Goomba(this, 600, 500);
+  const goomba2 = new Goomba(this, 800, 500);
+
+  // Add collision between Goombas and platforms
+  this.physics.add.collider(goomba1.sprite, platforms.group);
+  this.physics.add.collider(goomba2.sprite, platforms.group);
+
+  // Add collision between Mario and Goombas
+  this.physics.add.collider(player.sprite, goomba1.sprite, hitGoomba, null, this);
+  this.physics.add.collider(player.sprite, goomba2.sprite, hitGoomba, null, this);
+
   // Set the camera to follow the player
   this.cameras.main.setBounds(0, 0, worldWidth, 600);
   this.cameras.main.startFollow(player.sprite);
@@ -56,6 +77,19 @@ function create() {
 function update() {
   // Update the player
   player.update(cursors);
+}
+
+function hitGoomba(playerSprite, goombaSprite) {
+  if (playerSprite.body.touching.down && goombaSprite.body.touching.up) {
+    // Mario is jumping down onto Goomba
+    goombaSprite.destroy();
+    // Increase score or points here
+  } else {
+    // Mario hit Goomba from the side or bottom - game over
+    this.physics.pause();
+    playerSprite.setTint(0xff0000);
+    // Add game over logic here
+  }
 }
 
 // Function to handle collision between Mario and blocks
@@ -114,8 +148,21 @@ function collectPowerUp(playerSprite, powerUp) {
   // Remove the power-up sprite
   powerUp.destroy();
 
-  // Apply power-up effects to Mario
-  player.collectPowerUp(1.5, 1.3);
+  var scaleFactor = 1.5;
+  var speedFactor = 1.5;
+  // Animate Mario's growth
+  this.tweens.add({
+    targets: player.sprite,
+    scaleX: scaleFactor,
+    scaleY: scaleFactor,
+    yoyo: true,
+    repeat: 2,
+    duration: 100,
+    onComplete: () => {
+      // Apply power-up effects to Mario after the animation
+      player.collectPowerUp(scaleFactor, speedFactor);
+    }
+  });
 }
 
 class Mario {
@@ -198,9 +245,8 @@ class Mario {
       this.sprite.anims.play('turn');
     }
 
-    // Allow the player to jump if touching the ground
-    if (cursors.up.isDown && this.sprite.body.touching.down) {
-      this.sprite.setVelocityY(-876); // Increased jump velocity by 1.5 times
+    if (cursors.up.isDown && (this.sprite.body.touching.down || this.sprite.body.blocked.down)) {
+      this.sprite.setVelocityY(-876);
     }
   }
 
@@ -209,21 +255,9 @@ class Mario {
   }
 
   collectPowerUp(scaleFactor, speedFactor) {
-    // Scale up the sprite
     this.sprite.setScale(scaleFactor);
 
-    // Adjust physics body size
-    this.sprite.body.setSize(
-      this.sprite.width * scaleFactor,
-      this.sprite.height * scaleFactor,
-      true
-    );
-
-    // Increase move speed
     this.moveSpeed *= speedFactor;
-
-    // Adjust the position to prevent sinking into the ground
-    this.sprite.y -= (this.sprite.displayHeight * (scaleFactor - 1)) / 2;
   }
 }
 
@@ -326,5 +360,25 @@ class Platforms {
 
     // Custom property to identify the question block
     questionBlock.isQuestionBlock = true;
+  }
+}
+
+class Goomba {
+  constructor(scene, x, y) {
+    this.scene = scene;
+    this.sprite = scene.physics.add.sprite(x, y, 'goomba');
+
+    // Set Goomba properties
+    this.sprite.setCollideWorldBounds(true);
+    this.sprite.setVelocityX(-50); // Move left slowly
+    this.sprite.setBounceX(1); // Bounce when hitting walls
+
+    // Enable collision with world bounds
+    this.sprite.body.onWorldBounds = true;
+    scene.physics.world.on('worldbounds', (body) => {
+      if (body.gameObject === this.sprite) {
+        this.sprite.setVelocityX(-this.sprite.body.velocity.x);
+      }
+    });
   }
 }
