@@ -112,6 +112,7 @@ function hitGoomba(playerSprite, goombaSprite) {
   if (playerSprite.body.touching.down && goombaSprite.body.touching.up) {
     // Mario is jumping down onto Goomba
     goombaSprite.destroy();
+    playerSprite.setVelocityY(-876); 
     // Increase score or points here
   } else {
     // Mario hit Goomba from the side or bottom - game over
