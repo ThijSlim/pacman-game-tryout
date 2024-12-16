@@ -3,7 +3,7 @@ const config = {
   width: 800, // Canvas width remains the same
   height: 600,
   physics: {
-    default: "arcade",
+    default: 'arcade',
     arcade: {
       gravity: { y: 2040 },
       debug: false,
@@ -37,9 +37,9 @@ function create() {
   background.fillStyle(0x87ceeb, 1); // Light blue color
   background.fillRect(0, 0, worldWidth, 600);
 
-  scoreText = this.add.text(16, 16, "Score: 0", {
-    fontSize: "32px",
-    fill: "#000",
+  scoreText = this.add.text(16, 16, 'Score: 0', {
+    fontSize: '32px',
+    fill: '#000',
   });
   scoreText.setScrollFactor(0);
 
@@ -50,11 +50,11 @@ function create() {
   player = new Mario(this, 100, 450);
 
   // Create Goomba texture if it doesn't exist
-  if (!this.textures.exists("goomba")) {
+  if (!this.textures.exists('goomba')) {
     const goombaGraphics = this.add.graphics();
     goombaGraphics.fillStyle(0x8b4513, 1); // Brown color
     goombaGraphics.fillCircle(16, 16, 16); // Radius of 16 pixels
-    goombaGraphics.generateTexture("goomba", 32, 32);
+    goombaGraphics.generateTexture('goomba', 32, 32);
     goombaGraphics.destroy();
   }
 
@@ -138,16 +138,16 @@ function hitGoomba(playerSprite, goombaSprite) {
 }
 
 function hitBlock(playerSprite, block) {
-  if (block.texture.key === "questionBlock" && !block.activated) {
+  if (block.texture.key === 'questionBlock' && !block.activated) {
     if (playerSprite.body.touching.up && block.body.touching.down) {
       block.activated = true;
-      block.setTexture("usedBlock");
+      block.setTexture('usedBlock');
 
-      if (block.contains === "coin") {
+      if (block.contains === 'coin') {
         spawnCoin.call(this, block.x + block.width / 2, block.y - block.height);
         score += 10;
-        scoreText.setText("Score: " + score);
-      } else if (block.contains === "powerUp") {
+        scoreText.setText('Score: ' + score);
+      } else if (block.contains === 'powerUp') {
         spawnPowerUp.call(
           this,
           block.x + block.width / 2,
@@ -159,15 +159,15 @@ function hitBlock(playerSprite, block) {
 }
 
 function spawnPowerUp(x, y) {
-  if (!this.textures.exists("powerUp")) {
+  if (!this.textures.exists('powerUp')) {
     const powerUpGraphics = this.add.graphics();
     powerUpGraphics.fillStyle(0xff0000, 1);
     powerUpGraphics.fillCircle(15, 15, 15);
-    powerUpGraphics.generateTexture("powerUp", 30, 30);
+    powerUpGraphics.generateTexture('powerUp', 30, 30);
     powerUpGraphics.destroy();
   }
 
-  const powerUp = this.physics.add.sprite(x, y, "powerUp");
+  const powerUp = this.physics.add.sprite(x, y, 'powerUp');
   powerUp.setVelocityY(-100);
   powerUp.body.allowGravity = false;
 
@@ -181,15 +181,15 @@ function spawnPowerUp(x, y) {
 }
 
 function spawnCoin(x, y) {
-  if (!this.textures.exists("coin")) {
+  if (!this.textures.exists('coin')) {
     const coinGraphics = this.add.graphics();
     coinGraphics.fillStyle(0xffff00, 1);
     coinGraphics.fillCircle(15, 15, 15);
-    coinGraphics.generateTexture("coin", 30, 30);
+    coinGraphics.generateTexture('coin', 30, 30);
     coinGraphics.destroy();
   }
 
-  const coin = this.physics.add.sprite(x, y, "coin");
+  const coin = this.physics.add.sprite(x, y, 'coin');
   coin.body.allowGravity = false;
 
   this.tweens.add({
@@ -197,7 +197,7 @@ function spawnCoin(x, y) {
     y: y - 50,
     alpha: 0,
     duration: 800,
-    ease: "Power1",
+    ease: 'Power1',
     onComplete: () => {
       coin.destroy();
     },
@@ -232,8 +232,8 @@ function endGame() {
   const gameOverText = this.add.text(
     this.cameras.main.midPoint.x,
     this.cameras.main.midPoint.y,
-    "Game Over",
-    { fontSize: "64px", fill: "#000" }
+    'Game Over',
+    { fontSize: '64px', fill: '#000' }
   );
   gameOverText.setOrigin(0.5);
 }
@@ -245,26 +245,22 @@ class Mario {
     const blockSize = 32; // Assuming block size is 32
     const scaleFactor = 1; // Adjusted scale factor
 
-    const marioWidth = blockSize;
     const marioHeight = blockSize;
+    const marioWidth = (2 / 3) * marioHeight;
 
     const marioGraphics = scene.add.graphics();
     // Head
     marioGraphics.fillStyle(0xffcc99, 1);
-    marioGraphics.fillCircle(
-      marioWidth / 2,
-      marioHeight / 4,
-      marioHeight / 4
-    );
+    marioGraphics.fillCircle(marioWidth / 2, marioHeight / 4, marioHeight / 4);
     // Body
     marioGraphics.fillStyle(0xff0000, 1);
     marioGraphics.fillRect(0, marioHeight / 2, marioWidth, marioHeight / 2);
 
-    marioGraphics.generateTexture("marioTexture", marioWidth, marioHeight);
+    marioGraphics.generateTexture('marioTexture', marioWidth, marioHeight);
     marioGraphics.destroy();
 
     this.sprite = scene.physics.add
-      .sprite(x, y, "marioTexture")
+      .sprite(x, y, 'marioTexture')
       .setOrigin(0.5, 1);
     this.sprite.setCollideWorldBounds(false);
     this.sprite.setBounce(0);
@@ -276,21 +272,21 @@ class Mario {
 
   createAnimations() {
     this.scene.anims.create({
-      key: "left",
-      frames: [{ key: "marioTexture" }],
+      key: 'left',
+      frames: [{ key: 'marioTexture' }],
       frameRate: 10,
       repeat: -1,
     });
 
     this.scene.anims.create({
-      key: "turn",
-      frames: [{ key: "marioTexture" }],
+      key: 'turn',
+      frames: [{ key: 'marioTexture' }],
       frameRate: 20,
     });
 
     this.scene.anims.create({
-      key: "right",
-      frames: [{ key: "marioTexture" }],
+      key: 'right',
+      frames: [{ key: 'marioTexture' }],
       frameRate: 10,
       repeat: -1,
     });
@@ -299,15 +295,15 @@ class Mario {
   update(cursors) {
     if (cursors.left.isDown) {
       this.sprite.setVelocityX(-this.moveSpeed);
-      this.sprite.anims.play("left", true);
+      this.sprite.anims.play('left', true);
       this.sprite.setFlipX(true);
     } else if (cursors.right.isDown) {
       this.sprite.setVelocityX(this.moveSpeed);
-      this.sprite.anims.play("right", true);
+      this.sprite.anims.play('right', true);
       this.sprite.setFlipX(false);
     } else {
       this.sprite.setVelocityX(0);
-      this.sprite.anims.play("turn");
+      this.sprite.anims.play('turn');
     }
 
     if (
@@ -344,16 +340,18 @@ class Platforms {
     this.createGround(worldWidth);
     this.createLevelPlatforms();
     this.createQuestionBlocks();
+
+    this.createGreenPipes();
   }
 
   createGround(worldWidth) {
     // Create ground texture if needed
-    if (!this.scene.textures.exists("groundBlock")) {
+    if (!this.scene.textures.exists('groundBlock')) {
       const groundGraphics = this.scene.add.graphics();
       groundGraphics.fillStyle(0x8b4513, 1);
       groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
       groundGraphics.generateTexture(
-        "groundBlock",
+        'groundBlock',
         this.blockSize,
         this.blockSize
       );
@@ -372,9 +370,42 @@ class Platforms {
         .create(
           x * this.blockSize,
           this.scene.scale.height - this.blockSize / 2,
-          "groundBlock"
+          'groundBlock'
         )
         .setOrigin(0, 0.5)
+        .refreshBody();
+    }
+  }
+
+  createGreenPipes() {
+    if (!this.scene.textures.exists('pipeBlock')) {
+      const pipeGraphics = this.scene.add.graphics();
+      pipeGraphics.fillStyle(0x008000, 1); // Green color
+      pipeGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      pipeGraphics.generateTexture('pipeBlock', this.blockSize, this.blockSize);
+      pipeGraphics.destroy();
+    }
+
+    // Create first pipe with a height of 2 blocks
+    this.createPipeAtGrid(20, 2);
+
+    // Create second pipe with a height of 3 blocks
+    this.createPipeAtGrid(25, 3);
+  }
+
+  createPipeAtGrid(gridX, heightInBlocks) {
+    const x = gridX * this.blockSize;
+    const groundY = this.scene.scale.height - this.blockSize; // Adjust to top of ground
+  
+    for (let i = 0; i < heightInBlocks; i++) {
+      const y = groundY - i * this.blockSize;
+      this.group
+        .create(x, y, "pipeBlock")
+        .setOrigin(0, 1) // Set origin to bottom left
+        .refreshBody();
+      this.group
+        .create(x + this.blockSize, y, "pipeBlock")
+        .setOrigin(0, 1) // Set origin to bottom left
         .refreshBody();
     }
   }
@@ -393,37 +424,38 @@ class Platforms {
   }
 
   createLevelPlatforms() {
-    if (!this.scene.textures.exists("platformBlock")) {
+    if (!this.scene.textures.exists('platformBlock')) {
       const platformGraphics = this.scene.add.graphics();
       platformGraphics.fillStyle(0xa0522d, 1);
       platformGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
       platformGraphics.generateTexture(
-        "platformBlock",
+        'platformBlock',
         this.blockSize,
         this.blockSize
       );
       platformGraphics.destroy();
     }
 
-    this.createPlatformRowAtGrid(9, 5, 1, "platformBlock");
-    this.createPlatformRowAtGrid(11, 5, 1, "platformBlock");
-    this.createPlatformRowAtGrid(13, 5, 1, "platformBlock");
+    this.createPlatformRowAtGrid(9, 4, 1, 'platformBlock');
+    this.createPlatformRowAtGrid(11, 4, 1, 'platformBlock');
+    this.createPlatformRowAtGrid(13, 4, 1, 'platformBlock');
 
-    this.createPlatformRowAtGrid(16, 1, 1, "platformBlock");
-    this.createPlatformRowAtGrid(26, 1, 1, "platformBlock");
+    this.createPlatformRowAtGrid(16, 1, 1, 'platformBlock');
+    this.createPlatformRowAtGrid(26, 1, 1, 'platformBlock');
   }
 
   createQuestionBlocks() {
-    this.createQuestionBlock(6, 5, "coin");
-    this.createQuestionBlock(10, 5, "coin");
-    this.createQuestionBlock(12, 5, "coin");
-    this.createQuestionBlock(11, 9, "powerUp");
+    this.createQuestionBlock(6, 4, 'coin');
+    this.createQuestionBlock(10, 4, 'coin');
+    this.createQuestionBlock(12, 4, 'coin');
+    this.createQuestionBlock(11, 8, 'powerUp');
   }
 
   createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
     const startX = startGridX * this.blockSize;
-    
-    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+
+    const y =
+      this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
     for (let i = 0; i < numBlocks; i++) {
       this.group
         .create(startX + i * this.blockSize, y, texture)
@@ -434,27 +466,27 @@ class Platforms {
 
   createQuestionBlock(gridX, gridY, contains) {
     const x = gridX * this.blockSize;
-    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+    const y =
+      this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
 
-
-    if (!this.scene.textures.exists("questionBlock")) {
+    if (!this.scene.textures.exists('questionBlock')) {
       const questionBlockGraphics = this.scene.add.graphics();
       questionBlockGraphics.fillStyle(0xffd700, 1);
       questionBlockGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
       questionBlockGraphics.generateTexture(
-        "questionBlock",
+        'questionBlock',
         this.blockSize,
         this.blockSize
       );
       questionBlockGraphics.destroy();
     }
 
-    if (!this.scene.textures.exists("usedBlock")) {
+    if (!this.scene.textures.exists('usedBlock')) {
       const usedBlockGraphics = this.scene.add.graphics();
       usedBlockGraphics.fillStyle(0xa9a9a9, 1);
       usedBlockGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
       usedBlockGraphics.generateTexture(
-        "usedBlock",
+        'usedBlock',
         this.blockSize,
         this.blockSize
       );
@@ -462,7 +494,7 @@ class Platforms {
     }
 
     const questionBlock = this.group
-      .create(x, y, "questionBlock")
+      .create(x, y, 'questionBlock')
       .setOrigin(0, 0.5)
       .refreshBody();
 
@@ -476,7 +508,7 @@ class Goomba {
     this.scene = scene;
     this.speed = 50;
     this.direction = direction;
-    this.sprite = scene.physics.add.sprite(x, y, "goomba");
+    this.sprite = scene.physics.add.sprite(x, y, 'goomba');
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setVelocityX(this.speed * this.direction);
     this.sprite.goomba = this;
