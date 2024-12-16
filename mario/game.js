@@ -47,7 +47,7 @@ function create() {
 
   platforms = new Platforms(this, worldWidth);
 
-  player = new Mario(this, 100, 450);
+  player = new Mario(this, 300, 450);
 
   // Create Goomba texture if it doesn't exist
   if (!this.textures.exists('goomba')) {
@@ -58,8 +58,8 @@ function create() {
     goombaGraphics.destroy();
   }
 
-  goomba1 = new Goomba(this, 600, 500, 1);
-  goomba2 = new Goomba(this, 800, 500, -1);
+  goomba1 = new Goomba(this, 800, 500, 1);
+  goomba2 = new Goomba(this, 1200, 500, -1);
 
   this.physics.add.collider(goomba1.sprite, platforms.group);
   this.physics.add.collider(goomba2.sprite, platforms.group);
@@ -387,8 +387,8 @@ class Platforms {
 
     // Define the holes in block coordinates
     this.holes = [
-      [28, 33], // A hole from block 28 up to (but not including) block 33
-      [50, 52], // Another hole from block 50 up to block 52
+      [60, 65], // A hole from block 28 up to (but not including) block 33
+      [70, 75], // Another hole from block 50 up to block 52
     ];
 
     this.createGround(worldWidth);
@@ -440,24 +440,26 @@ class Platforms {
     }
 
     // Create first pipe with a height of 2 blocks
-    this.createPipeAtGrid(20, 2);
+    this.createPipeAtGrid(30, 2);
 
     // Create second pipe with a height of 3 blocks
-    this.createPipeAtGrid(25, 3);
+    this.createPipeAtGrid(39, 3);
+
+    this.createPipeAtGrid(46, 4);
+
+    this.createPipeAtGrid(56, 4);
+
   }
 
   createPipeAtGrid(gridX, heightInBlocks) {
     const x = gridX * this.blockSize;
     const groundY = this.scene.scale.height - this.blockSize; // top of ground
-  
+
     for (let i = 0; i < heightInBlocks; i++) {
       const y = groundY - i * this.blockSize;
+      this.group.create(x, y, 'pipeBlock').setOrigin(0, 1).refreshBody();
       this.group
-        .create(x, y, "pipeBlock")
-        .setOrigin(0, 1)
-        .refreshBody();
-      this.group
-        .create(x + this.blockSize, y, "pipeBlock")
+        .create(x + this.blockSize, y, 'pipeBlock')
         .setOrigin(0, 1)
         .refreshBody();
     }
@@ -486,19 +488,16 @@ class Platforms {
       platformGraphics.destroy();
     }
 
-    this.createPlatformRowAtGrid(9, 4, 1, 'platformBlock');
-    this.createPlatformRowAtGrid(11, 4, 1, 'platformBlock');
-    this.createPlatformRowAtGrid(13, 4, 1, 'platformBlock');
-
-    this.createPlatformRowAtGrid(16, 1, 1, 'platformBlock');
-    this.createPlatformRowAtGrid(26, 1, 1, 'platformBlock');
+    this.createPlatformRowAtGrid(19, 4, 1, 'platformBlock');
+    this.createPlatformRowAtGrid(21, 4, 1, 'platformBlock');
+    this.createPlatformRowAtGrid(23, 4, 1, 'platformBlock');
   }
 
   createQuestionBlocks() {
-    this.createQuestionBlock(6, 4, 'coin');
-    this.createQuestionBlock(10, 4, 'coin');
-    this.createQuestionBlock(12, 4, 'coin');
-    this.createQuestionBlock(11, 8, 'powerUp');
+    this.createQuestionBlock(16, 4, 'coin');
+    this.createQuestionBlock(20, 4, 'coin');
+    this.createQuestionBlock(22, 4, 'coin');
+    this.createQuestionBlock(21, 8, 'powerUp');
   }
 
   createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
