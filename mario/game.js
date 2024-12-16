@@ -242,38 +242,25 @@ class Mario {
   constructor(scene, x, y) {
     this.scene = scene;
 
-    const scaleFactor = 0.625;
+    const blockSize = 32; // Assuming block size is 32
+    const scaleFactor = 1; // Adjusted scale factor
+
+    const marioWidth = blockSize;
+    const marioHeight = blockSize;
 
     const marioGraphics = scene.add.graphics();
     // Head
     marioGraphics.fillStyle(0xffcc99, 1);
     marioGraphics.fillCircle(
-      16 * scaleFactor,
-      16 * scaleFactor,
-      16 * scaleFactor
+      marioWidth / 2,
+      marioHeight / 4,
+      marioHeight / 4
     );
     // Body
     marioGraphics.fillStyle(0xff0000, 1);
-    marioGraphics.fillRect(
-      0,
-      32 * scaleFactor,
-      32 * scaleFactor,
-      32 * scaleFactor
-    );
-    // Legs
-    marioGraphics.fillStyle(0x0000ff, 1);
-    marioGraphics.fillRect(
-      0,
-      64 * scaleFactor,
-      32 * scaleFactor,
-      16 * scaleFactor
-    );
+    marioGraphics.fillRect(0, marioHeight / 2, marioWidth, marioHeight / 2);
 
-    marioGraphics.generateTexture(
-      "marioTexture",
-      32 * scaleFactor,
-      80 * scaleFactor
-    );
+    marioGraphics.generateTexture("marioTexture", marioWidth, marioHeight);
     marioGraphics.destroy();
 
     this.sprite = scene.physics.add
@@ -281,7 +268,7 @@ class Mario {
       .setOrigin(0.5, 1);
     this.sprite.setCollideWorldBounds(false);
     this.sprite.setBounce(0);
-    this.sprite.body.setSize(20, 50).setOffset(6, 0);
+    this.sprite.body.setSize(marioWidth, marioHeight).setOffset(0, 0);
     this.moveSpeed = 220;
 
     this.createAnimations();
@@ -422,8 +409,8 @@ class Platforms {
     this.createPlatformRowAtGrid(11, 5, 1, "platformBlock");
     this.createPlatformRowAtGrid(13, 5, 1, "platformBlock");
 
-    this.createPlatformRowAtGrid(16, 2, 1, "platformBlock");
-    this.createPlatformRowAtGrid(26, 2, 1, "platformBlock");
+    this.createPlatformRowAtGrid(16, 1, 1, "platformBlock");
+    this.createPlatformRowAtGrid(26, 1, 1, "platformBlock");
   }
 
   createQuestionBlocks() {
@@ -435,7 +422,8 @@ class Platforms {
 
   createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
     const startX = startGridX * this.blockSize;
-    const y = this.scene.scale.height - gridY * this.blockSize;
+    
+    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
     for (let i = 0; i < numBlocks; i++) {
       this.group
         .create(startX + i * this.blockSize, y, texture)
@@ -446,7 +434,8 @@ class Platforms {
 
   createQuestionBlock(gridX, gridY, contains) {
     const x = gridX * this.blockSize;
-    const y = this.scene.scale.height - gridY * this.blockSize;
+    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+
 
     if (!this.scene.textures.exists("questionBlock")) {
       const questionBlockGraphics = this.scene.add.graphics();
