@@ -57,35 +57,57 @@ function create() {
     goombaGraphics.generateTexture('goomba', 32, 32);
     goombaGraphics.destroy();
   }
+  // Define Goomba spawn positions in block coordinates
+  // For example, if you say gridX=25, gridY=4, it means
+  // the Goomba stands at 25 blocks from the left and 4 blocks high.
+  // Adjust gridY according to where you want them standing (e.g., on ground).
+  const goombaPositions = [
+    { gridX: 25, gridY: 4, direction: 1 },
+    { gridX: 42, gridY: 4, direction: -1 },
+    { gridX: 52, gridY: 4, direction: 1 },
+    { gridX: 53, gridY: 4, direction: -1 },
+  ];
 
-  goomba1 = new Goomba(this, 800, 500, 1);
-  goomba2 = new Goomba(this, 1200, 500, -1);
+  this.goombas = [];
 
-  this.physics.add.collider(goomba1.sprite, platforms.group);
-  this.physics.add.collider(goomba2.sprite, platforms.group);
+  const blockSize = 32;
 
-  this.physics.add.collider(
-    goomba1.sprite,
-    goomba2.sprite,
-    reverseGoombaDirection,
-    null,
-    this
-  );
+  goombaPositions.forEach((pos) => {
+    const x = pos.gridX * blockSize;
+    // Assuming ground at bottom and y=0 at top,
+    // and that gridY is measured from bottom:
+    // If you placed your ground at (height - blockSize/2),
+    // and each block up you go reduces the pixel Y:
+    const y = this.scale.height - pos.gridY * blockSize;
 
-  this.physics.add.collider(
-    player.sprite,
-    goomba1.sprite,
-    hitGoomba,
-    null,
-    this
-  );
-  this.physics.add.collider(
-    player.sprite,
-    goomba2.sprite,
-    hitGoomba,
-    null,
-    this
-  );
+    const goomba = new Goomba(this, x, y, pos.direction);
+    this.goombas.push(goomba);
+
+    // Collide with platforms
+    this.physics.add.collider(goomba.sprite, platforms.group);
+
+    // Collide with player
+    this.physics.add.collider(
+      player.sprite,
+      goomba.sprite,
+      hitGoomba,
+      null,
+      this
+    );
+
+    // Add collisions between goombas themselves
+    this.goombas.forEach((otherGoomba) => {
+      if (otherGoomba !== goomba) {
+        this.physics.add.collider(
+          goomba.sprite,
+          otherGoomba.sprite,
+          reverseGoombaDirection,
+          null,
+          this
+        );
+      }
+    });
+  });
 
   this.cameras.main.setBounds(0, 0, worldWidth, 600);
   this.cameras.main.startFollow(player.sprite);
@@ -105,8 +127,8 @@ function update() {
   if (gameOver) return;
 
   player.update(cursors);
-  goomba1.update();
-  goomba2.update();
+  // Update all goombas
+  this.goombas.forEach((goomba) => goomba.update());
 
   // Check if Mario falls into a hole (off the screen bottom)
   if (player.sprite.y > this.scale.height) {
@@ -448,7 +470,6 @@ class Platforms {
     this.createPipeAtGrid(46, 4);
 
     this.createPipeAtGrid(56, 4);
-
   }
 
   createPipeAtGrid(gridX, heightInBlocks) {
