@@ -130,7 +130,8 @@ function hitGoomba(playerSprite, goombaSprite) {
   if (playerSprite.body.touching.down && goombaSprite.body.touching.up) {
     goombaSprite.destroy();
     playerSprite.setVelocityY(-876);
-    // Increase score or points here
+    score += 50; // Award points for defeating a Goomba
+    scoreText.setText('Score: ' + score);
   } else {
     // Mario hit Goomba from the side or bottom - game over
     endGame.call(this);
@@ -138,8 +139,10 @@ function hitGoomba(playerSprite, goombaSprite) {
 }
 
 function hitBlock(playerSprite, block) {
-  if (block.texture.key === 'questionBlock' && !block.activated) {
-    if (playerSprite.body.touching.up && block.body.touching.down) {
+  // Check if Mario is hitting the block from below (player must be moving upward into the block)
+  if (playerSprite.body.touching.up && block.body.touching.down) {
+    // If it's a question block and not activated yet
+    if (block.texture.key === 'questionBlock' && !block.activated) {
       block.activated = true;
       block.setTexture('usedBlock');
 
@@ -155,7 +158,59 @@ function hitBlock(playerSprite, block) {
         );
       }
     }
+    // If it's a used block, do nothing special
+    else if (block.texture.key === 'usedBlock') {
+      // No action for used blocks when hit again
+    } else {
+      // It's a normal block (e.g., groundBlock, platformBlock, pipeBlock)
+      // Break the block
+      breakBlock.call(this, block);
+    }
   }
+}
+
+function breakBlock(block) {
+  const x = block.x;
+  const y = block.y;
+
+  // Destroy the original block
+  block.destroy();
+
+  // Create debris pieces for break animation
+  // We'll create 4 small debris sprites
+  const debrisCount = 4;
+  const debrisSize = 8; // smaller pieces
+  if (!this.textures.exists('debris')) {
+    const debrisGraphics = this.add.graphics();
+    debrisGraphics.fillStyle(0x8b4513, 1); // Brown pieces, same as ground
+    debrisGraphics.fillRect(0, 0, debrisSize, debrisSize);
+    debrisGraphics.generateTexture('debris', debrisSize, debrisSize);
+    debrisGraphics.destroy();
+  }
+
+  for (let i = 0; i < debrisCount; i++) {
+    const debris = this.physics.add.sprite(x, y - 8, 'debris');
+    debris.setVelocity(
+      Phaser.Math.Between(-100, 100), // random horizontal velocity
+      Phaser.Math.Between(-300, -200) // random upward velocity
+    );
+    debris.body.allowGravity = true;
+
+    // Fade out the debris and destroy it after some time
+    this.tweens.add({
+      targets: debris,
+      alpha: 0,
+      duration: 500,
+      delay: 300,
+      onComplete: () => {
+        debris.destroy();
+      },
+    });
+  }
+
+  // Increase score for breaking a block
+  score += 5;
+  scoreText.setText('Score: ' + score);
 }
 
 function spawnPowerUp(x, y) {
@@ -323,6 +378,7 @@ class Mario {
     this.moveSpeed *= speedFactor;
   }
 }
+
 class Platforms {
   constructor(scene, worldWidth) {
     this.scene = scene;
@@ -330,8 +386,6 @@ class Platforms {
     this.blockSize = 32;
 
     // Define the holes in block coordinates
-    // Each entry is [startBlockIndex, endBlockIndex]
-    // Blocks in the range [startBlockIndex, endBlockIndex) will be skipped.
     this.holes = [
       [28, 33], // A hole from block 28 up to (but not including) block 33
       [50, 52], // Another hole from block 50 up to block 52
@@ -340,7 +394,6 @@ class Platforms {
     this.createGround(worldWidth);
     this.createLevelPlatforms();
     this.createQuestionBlocks();
-
     this.createGreenPipes();
   }
 
@@ -395,17 +448,17 @@ class Platforms {
 
   createPipeAtGrid(gridX, heightInBlocks) {
     const x = gridX * this.blockSize;
-    const groundY = this.scene.scale.height - this.blockSize; // Adjust to top of ground
+    const groundY = this.scene.scale.height - this.blockSize; // top of ground
   
     for (let i = 0; i < heightInBlocks; i++) {
       const y = groundY - i * this.blockSize;
       this.group
         .create(x, y, "pipeBlock")
-        .setOrigin(0, 1) // Set origin to bottom left
+        .setOrigin(0, 1)
         .refreshBody();
       this.group
         .create(x + this.blockSize, y, "pipeBlock")
-        .setOrigin(0, 1) // Set origin to bottom left
+        .setOrigin(0, 1)
         .refreshBody();
     }
   }
@@ -413,9 +466,6 @@ class Platforms {
   isInHole(blockIndex) {
     // Check if the given blockIndex falls within any hole interval
     for (const [start, end] of this.holes) {
-      // If we consider the hole range as inclusive of start and exclusive of end:
-      // Then the condition is blockIndex >= start && blockIndex < end
-      // Adjust if you want inclusive end.
       if (blockIndex >= start && blockIndex < end) {
         return true;
       }
@@ -453,7 +503,6 @@ class Platforms {
 
   createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
     const startX = startGridX * this.blockSize;
-
     const y =
       this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
     for (let i = 0; i < numBlocks; i++) {
