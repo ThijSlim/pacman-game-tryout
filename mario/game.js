@@ -50,21 +50,25 @@ function create() {
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, null, this);
 
-  // Make goombas collide with platforms and player
+  // Setup Goomba collisions
   level.goombas.forEach((goomba) => {
+    // Goombas collide with platforms
     this.physics.add.collider(goomba.sprite, level.platforms.group);
-    this.physics.add.collider(player.sprite, goomba.sprite, hitGoomba, null, this);
+    
+    // Goomba & Player collision - handled inside Goomba class
+    this.physics.add.collider(player.sprite, goomba.sprite, function (playerSprite, goombaSprite) {
+      goomba.handlePlayerCollision(playerSprite, player, () => {
+        score += 50;
+        scoreText.setText('Score: ' + score);
+      }, endGame.bind(this));
+    }, null, this);
 
     // Collide goombas with each other
     level.goombas.forEach((otherGoomba) => {
       if (otherGoomba !== goomba) {
-        this.physics.add.collider(
-          goomba.sprite,
-          otherGoomba.sprite,
-          reverseGoombaDirection,
-          null,
-          this
-        );
+        this.physics.add.collider(goomba.sprite, otherGoomba.sprite, function (goombaSprite1, goombaSprite2) {
+          goomba.handleGoombaCollision(goombaSprite1, goombaSprite2);
+        }, null, this);
       }
     });
   });
@@ -79,35 +83,13 @@ function update() {
   if (gameOver) return;
 
   player.update(cursors);
+
   // Update all goombas
   level.goombas.forEach((goomba) => goomba.update());
 
   // Check if Mario falls into a hole (off the screen bottom)
   if (player.sprite.y > this.scale.height) {
     // Mario fell off the bottom of the screen
-    endGame.call(this);
-  }
-}
-
-function reverseGoombaDirection(goombaSprite1, goombaSprite2) {
-  const goomba1 = goombaSprite1.goomba;
-  const goomba2 = goombaSprite2.goomba;
-
-  goomba1.direction *= -1;
-  goomba1.sprite.setVelocityX(goomba1.speed * goomba1.direction);
-
-  goomba2.direction *= -1;
-  goomba2.sprite.setVelocityX(goomba2.speed * goomba2.direction);
-}
-
-function hitGoomba(playerSprite, goombaSprite) {
-  if (playerSprite.body.touching.down && goombaSprite.body.touching.up) {
-    goombaSprite.destroy();
-    playerSprite.setVelocityY(-876);
-    score += 50; // Award points for defeating a Goomba
-    scoreText.setText('Score: ' + score);
-  } else {
-    // Mario hit Goomba from the side or bottom - game over
     endGame.call(this);
   }
 }
@@ -409,6 +391,7 @@ class Goomba {
       return;
     }
 
+    // Reverse direction if blocked
     if (this.sprite.body.blocked.left || this.sprite.body.touching.left) {
       this.direction = 1;
       this.sprite.setVelocityX(this.speed * this.direction);
@@ -416,6 +399,31 @@ class Goomba {
       this.direction = -1;
       this.sprite.setVelocityX(this.speed * this.direction);
     }
+  }
+
+  handlePlayerCollision(playerSprite, playerObj, onStompedCallback, onGameOverCallback) {
+    // If player hits Goomba from above
+    if (playerSprite.body.touching.down && this.sprite.body.touching.up) {
+      // Goomba defeated
+      this.sprite.destroy();
+      playerSprite.setVelocityY(-876);
+      if (onStompedCallback) onStompedCallback();
+    } else {
+      // Player hit Goomba from side or bottom - game over
+      if (onGameOverCallback) onGameOverCallback();
+    }
+  }
+
+  handleGoombaCollision(goombaSprite1, goombaSprite2) {
+    // Reverse direction for both goombas
+    const goomba1 = goombaSprite1.goomba;
+    const goomba2 = goombaSprite2.goomba;
+
+    goomba1.direction *= -1;
+    goomba1.sprite.setVelocityX(goomba1.speed * goomba1.direction);
+
+    goomba2.direction *= -1;
+    goomba2.sprite.setVelocityX(goomba2.speed * goomba2.direction);
   }
 }
 
@@ -425,7 +433,7 @@ class Level {
     this.scene = scene;
     this.blockSize = 32;
 
-    // All grid-based configuration moved to top
+    // All grid-based configuration
     this.holes = [
       [60, 65],
       [70, 75],
