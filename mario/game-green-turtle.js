@@ -1,0 +1,782 @@
+const config = {
+  type: Phaser.AUTO,
+  width: 800, // Canvas width remains the same
+  height: 600,
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 2040 },
+      debug: false,
+    },
+  },
+  scene: {
+    preload,
+    create,
+    update,
+  },
+};
+
+let player;
+let cursors;
+let score = 0;
+let scoreText;
+let gameOver = false;
+let level;
+
+const game = new Phaser.Game(config);
+
+function preload() {
+  // No external assets to load
+}
+
+function create() {
+  const worldWidth = 2400; // 3 times the original width
+  const background = this.add.graphics();
+  background.fillStyle(0x87ceeb, 1); // Light blue color
+  background.fillRect(0, 0, worldWidth, 600);
+
+  scoreText = this.add.text(16, 16, 'Score: 0', {
+    fontSize: '32px',
+    fill: '#000',
+  });
+  scoreText.setScrollFactor(0);
+
+  this.physics.world.setBounds(0, 0, worldWidth, 600);
+
+  // Create and initialize the Level
+  level = new Level(this, worldWidth);
+  player = new Mario(this, 300, 450);
+
+  // Make player collide with platforms
+  this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, null, this);
+
+  // Setup Goomba collisions
+  level.goombas.forEach((goomba) => {
+    // Goombas collide with platforms
+    this.physics.add.collider(goomba.sprite, level.platforms.group);
+    
+    // Goomba & Player collision - handled inside Goomba class
+    this.physics.add.collider(player.sprite, goomba.sprite, function (playerSprite, goombaSprite) {
+      goomba.handlePlayerCollision(playerSprite, player, () => {
+        score += 50;
+        scoreText.setText('Score: ' + score);
+      }, endGame.bind(this));
+    }, null, this);
+
+    // Collide goombas with each other
+    level.goombas.forEach((otherGoomba) => {
+      if (otherGoomba !== goomba) {
+        this.physics.add.collider(goomba.sprite, otherGoomba.sprite, function (goombaSprite1, goombaSprite2) {
+          goomba.handleGoombaCollision(goombaSprite1, goombaSprite2);
+        }, null, this);
+      }
+    });
+  });
+
+  this.cameras.main.setBounds(0, 0, worldWidth, 600);
+  this.cameras.main.startFollow(player.sprite);
+
+  cursors = this.input.keyboard.createCursorKeys();
+
+  // Create a green turtle
+  this.turtle = new GreenTurtle(this, 600, 450, -1);
+
+  // Make turtle collide with platforms
+  this.physics.add.collider(this.turtle.sprite, level.platforms.group);
+
+  // Handle turtle <-> player collision
+  this.physics.add.collider(player.sprite, this.turtle.sprite, (playerSprite, turtleSprite) => {
+    // Access our class instance
+    const turtle = turtleSprite.greenTurtle;
+    turtle.handlePlayerCollision(playerSprite, player, endGame.bind(this));
+  });
+
+  // Handle hammer <-> player collision
+  this.physics.add.overlap(
+    player.sprite,
+    this.turtle.hammers,
+    (playerSprite, hammer) => {
+      const turtle = hammer.parentContainer || hammer.getData('owner'); 
+      // Or just handle here directly:
+      this.turtle.handleHammerCollision(playerSprite, player, hammer, endGame.bind(this));
+    },
+    null,
+    this
+  );
+}
+
+function update(time, delta) {
+  if (gameOver) return;
+
+  player.update(cursors);
+  level.goombas.forEach((goomba) => goomba.update());
+  
+  // Update turtle
+  if (this.turtle) {
+    this.turtle.update(time, delta);
+  }
+
+  // Check if Mario fell off bottom
+  if (player.sprite.y > this.scale.height) {
+    endGame.call(this);
+  }
+}
+
+function hitBlock(playerSprite, block) {
+  if (playerSprite.body.touching.up && block.body.touching.down) {
+    // If it's a question block and not activated yet
+    if (block.texture.key === 'questionBlock' && !block.activated) {
+      block.activated = true;
+      block.setTexture('usedBlock');
+
+      if (block.contains === 'coin') {
+        spawnCoin.call(this, block.x + block.width / 2, block.y - block.height);
+        score += 10;
+        scoreText.setText('Score: ' + score);
+      } else if (block.contains === 'powerUp') {
+        spawnPowerUp.call(
+          this,
+          block.x + block.width / 2,
+          block.y - block.height
+        );
+      }
+    } else if (block.texture.key === 'usedBlock') {
+      // No action
+    } else {
+      // Normal block: break it
+      breakBlock.call(this, block);
+    }
+  }
+}
+
+function breakBlock(block) {
+  const x = block.x;
+  const y = block.y;
+
+  block.destroy();
+
+  const debrisCount = 4;
+  const debrisSize = 8;
+  if (!this.textures.exists('debris')) {
+    const debrisGraphics = this.add.graphics();
+    debrisGraphics.fillStyle(0x8b4513, 1); // Brown pieces
+    debrisGraphics.fillRect(0, 0, debrisSize, debrisSize);
+    debrisGraphics.generateTexture('debris', debrisSize, debrisSize);
+    debrisGraphics.destroy();
+  }
+
+  for (let i = 0; i < debrisCount; i++) {
+    const debris = this.physics.add.sprite(x, y - 8, 'debris');
+    debris.setVelocity(
+      Phaser.Math.Between(-100, 100),
+      Phaser.Math.Between(-300, -200)
+    );
+    debris.body.allowGravity = true;
+
+    this.tweens.add({
+      targets: debris,
+      alpha: 0,
+      duration: 500,
+      delay: 300,
+      onComplete: () => {
+        debris.destroy();
+      },
+    });
+  }
+
+  score += 5;
+  scoreText.setText('Score: ' + score);
+}
+
+function spawnPowerUp(x, y) {
+  if (!this.textures.exists('powerUp')) {
+    const powerUpGraphics = this.add.graphics();
+    powerUpGraphics.fillStyle(0xff0000, 1);
+    powerUpGraphics.fillCircle(15, 15, 15);
+    powerUpGraphics.generateTexture('powerUp', 30, 30);
+    powerUpGraphics.destroy();
+  }
+
+  const powerUp = this.physics.add.sprite(x, y, 'powerUp');
+  powerUp.setVelocityY(-100);
+  powerUp.body.allowGravity = false;
+
+  this.time.delayedCall(500, () => {
+    powerUp.setVelocityY(0);
+    powerUp.body.allowGravity = true;
+  });
+
+  this.physics.add.collider(powerUp, level.platforms.group);
+  this.physics.add.overlap(player.sprite, powerUp, collectPowerUp, null, this);
+}
+
+function spawnCoin(x, y) {
+  if (!this.textures.exists('coin')) {
+    const coinGraphics = this.add.graphics();
+    coinGraphics.fillStyle(0xffff00, 1);
+    coinGraphics.fillCircle(15, 15, 15);
+    coinGraphics.generateTexture('coin', 30, 30);
+    coinGraphics.destroy();
+  }
+
+  const coin = this.physics.add.sprite(x, y, 'coin');
+  coin.body.allowGravity = false;
+
+  this.tweens.add({
+    targets: coin,
+    y: y - 50,
+    alpha: 0,
+    duration: 800,
+    ease: 'Power1',
+    onComplete: () => {
+      coin.destroy();
+    },
+  });
+}
+
+function collectPowerUp(playerSprite, powerUp) {
+  powerUp.destroy();
+
+  var scaleFactor = 1.5;
+  var speedFactor = 1.5;
+
+  this.tweens.add({
+    targets: player.sprite,
+    scaleX: scaleFactor,
+    scaleY: scaleFactor,
+    yoyo: true,
+    repeat: 2,
+    duration: 100,
+    onComplete: () => {
+      player.collectPowerUp(scaleFactor, speedFactor);
+    },
+  });
+}
+
+function endGame() {
+  gameOver = true;
+  player.sprite.setTint(0xff0000);
+
+  this.physics.pause();
+  const gameOverText = this.add.text(
+    this.cameras.main.midPoint.x,
+    this.cameras.main.midPoint.y,
+    'Game Over',
+    { fontSize: '64px', fill: '#000' }
+  );
+  gameOverText.setOrigin(0.5);
+}
+
+class Mario {
+  constructor(scene, x, y) {
+    this.scene = scene;
+
+    const blockSize = 32;
+    const scaleFactor = 1;
+    const marioHeight = blockSize;
+    const marioWidth = (2 / 3) * marioHeight;
+
+    const marioGraphics = scene.add.graphics();
+    // Head
+    marioGraphics.fillStyle(0xffcc99, 1);
+    marioGraphics.fillCircle(marioWidth / 2, marioHeight / 4, marioHeight / 4);
+    // Body
+    marioGraphics.fillStyle(0xff0000, 1);
+    marioGraphics.fillRect(0, marioHeight / 2, marioWidth, marioHeight / 2);
+
+    marioGraphics.generateTexture('marioTexture', marioWidth, marioHeight);
+    marioGraphics.destroy();
+
+    this.sprite = scene.physics.add
+      .sprite(x, y, 'marioTexture')
+      .setOrigin(0.5, 1);
+    this.sprite.setCollideWorldBounds(false);
+    this.sprite.setBounce(0);
+    this.sprite.body.setSize(marioWidth, marioHeight).setOffset(0, 0);
+    this.moveSpeed = 220;
+
+    this.createAnimations();
+  }
+
+  createAnimations() {
+    this.scene.anims.create({
+      key: 'left',
+      frames: [{ key: 'marioTexture' }],
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    this.scene.anims.create({
+      key: 'turn',
+      frames: [{ key: 'marioTexture' }],
+      frameRate: 20,
+    });
+
+    this.scene.anims.create({
+      key: 'right',
+      frames: [{ key: 'marioTexture' }],
+      frameRate: 10,
+      repeat: -1,
+    });
+  }
+
+  update(cursors) {
+    if (cursors.left.isDown) {
+      this.sprite.setVelocityX(-this.moveSpeed);
+      this.sprite.anims.play('left', true);
+      this.sprite.setFlipX(true);
+    } else if (cursors.right.isDown) {
+      this.sprite.setVelocityX(this.moveSpeed);
+      this.sprite.anims.play('right', true);
+      this.sprite.setFlipX(false);
+    } else {
+      this.sprite.setVelocityX(0);
+      this.sprite.anims.play('turn');
+    }
+
+    if (
+      cursors.up.isDown &&
+      (this.sprite.body.touching.down || this.sprite.body.blocked.down)
+    ) {
+      this.sprite.setVelocityY(-876);
+    }
+  }
+
+  collectPowerUp(scaleFactor, speedFactor) {
+    this.sprite.setScale(scaleFactor);
+    this.moveSpeed *= speedFactor;
+  }
+}
+
+class Platforms {
+  constructor(scene, worldWidth, blockSize, holes) {
+    this.scene = scene;
+    this.group = this.scene.physics.add.staticGroup();
+    this.blockSize = blockSize;
+    this.holes = holes;
+
+    this.createGround(worldWidth);
+  }
+
+  createGround(worldWidth) {
+    if (!this.scene.textures.exists('groundBlock')) {
+      const groundGraphics = this.scene.add.graphics();
+      groundGraphics.fillStyle(0x8b4513, 1);
+      groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
+      groundGraphics.destroy();
+    }
+
+    const numBlocks = Math.ceil(worldWidth / this.blockSize);
+
+    for (let x = 0; x <= numBlocks; x++) {
+      if (this.isInHole(x)) {
+        continue;
+      }
+      this.group
+        .create(
+          x * this.blockSize,
+          this.scene.scale.height - this.blockSize / 2,
+          'groundBlock'
+        )
+        .setOrigin(0, 0.5)
+        .refreshBody();
+    }
+  }
+
+  isInHole(blockIndex) {
+    for (const [start, end] of this.holes) {
+      if (blockIndex >= start && blockIndex < end) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+class Goomba {
+  constructor(scene, x, y, direction = -1) {
+    this.scene = scene;
+    this.speed = 50;
+    this.direction = direction;
+
+    if (!this.scene.textures.exists('goomba')) {
+      const goombaGraphics = this.scene.add.graphics();
+      goombaGraphics.fillStyle(0x8b4513, 1); // Brown color
+      goombaGraphics.fillCircle(16, 16, 16); 
+      goombaGraphics.generateTexture('goomba', 32, 32);
+      goombaGraphics.destroy();
+    }
+
+    this.sprite = scene.physics.add.sprite(x, y, 'goomba');
+    this.sprite.setCollideWorldBounds(true);
+    this.sprite.setVelocityX(this.speed * this.direction);
+    this.sprite.goomba = this;
+  }
+
+  update() {
+    if (!this.sprite.body?.blocked) {
+      return;
+    }
+
+    // Reverse direction if blocked
+    if (this.sprite.body.blocked.left || this.sprite.body.touching.left) {
+      this.direction = 1;
+      this.sprite.setVelocityX(this.speed * this.direction);
+    } else if (this.sprite.body.blocked.right || this.sprite.body.touching.right) {
+      this.direction = -1;
+      this.sprite.setVelocityX(this.speed * this.direction);
+    }
+  }
+
+  handlePlayerCollision(playerSprite, playerObj, onStompedCallback, onGameOverCallback) {
+    // If player hits Goomba from above
+    if (playerSprite.body.touching.down && this.sprite.body.touching.up) {
+      // Goomba defeated
+      this.sprite.destroy();
+      playerSprite.setVelocityY(-876);
+      if (onStompedCallback) onStompedCallback();
+    } else {
+      // Player hit Goomba from side or bottom - game over
+      if (onGameOverCallback) onGameOverCallback();
+    }
+  }
+
+  handleGoombaCollision(goombaSprite1, goombaSprite2) {
+    // Reverse direction for both goombas
+    const goomba1 = goombaSprite1.goomba;
+    const goomba2 = goombaSprite2.goomba;
+
+    goomba1.direction *= -1;
+    goomba1.sprite.setVelocityX(goomba1.speed * goomba1.direction);
+
+    goomba2.direction *= -1;
+    goomba2.sprite.setVelocityX(goomba2.speed * goomba2.direction);
+  }
+}
+
+// The new Level class
+class Level {
+  constructor(scene, worldWidth) {
+    this.scene = scene;
+    this.blockSize = 32;
+
+    // All grid-based configuration
+    this.holes = [
+      [60, 65],
+      [70, 75],
+    ];
+
+    // Pipe positions: [gridX, heightInBlocks]
+    this.pipePositions = [
+      [30, 2],
+      [39, 3],
+      [46, 4],
+      [56, 4],
+    ];
+
+    // Platform rows: startGridX, gridY, numBlocks, texture
+    this.platformRows = [
+      [19, 4, 1, 'platformBlock'],
+      [21, 4, 1, 'platformBlock'],
+      [23, 4, 1, 'platformBlock'],
+    ];
+
+    // Question blocks: gridX, gridY, contains
+    this.questionBlocks = [
+      [16, 4, 'coin'],
+      [20, 4, 'coin'],
+      [22, 4, 'coin'],
+      [21, 8, 'powerUp'],
+    ];
+
+    // Goomba positions: {gridX, gridY, direction}
+    this.goombaPositions = [
+      { gridX: 25, gridY: 4, direction: 1 },
+      { gridX: 42, gridY: 4, direction: -1 },
+      { gridX: 52, gridY: 4, direction: 1 },
+      { gridX: 53, gridY: 4, direction: -1 },
+    ];
+
+    // Create all platforms and environment
+    this.platforms = new Platforms(this.scene, worldWidth, this.blockSize, this.holes);
+
+    // Add pipes, blocks, platforms, question blocks, etc.
+    this.createGreenPipes();
+    this.createPlatformBlocks();
+    this.createQuestionBlocks();
+
+    // Add Goombas
+    this.goombas = [];
+    this.createGoombas();
+  }
+
+  createGreenPipes() {
+    if (!this.scene.textures.exists('pipeBlock')) {
+      const pipeGraphics = this.scene.add.graphics();
+      pipeGraphics.fillStyle(0x008000, 1); // Green
+      pipeGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      pipeGraphics.generateTexture('pipeBlock', this.blockSize, this.blockSize);
+      pipeGraphics.destroy();
+    }
+
+    // Use the pipePositions array defined at the top
+    this.pipePositions.forEach(([gridX, heightInBlocks]) => {
+      this.createPipeAtGrid(gridX, heightInBlocks);
+    });
+  }
+
+  createPipeAtGrid(gridX, heightInBlocks) {
+    const x = gridX * this.blockSize;
+    const groundY = this.scene.scale.height - this.blockSize;
+
+    for (let i = 0; i < heightInBlocks; i++) {
+      const y = groundY - i * this.blockSize;
+      this.platforms.group
+        .create(x, y, 'pipeBlock')
+        .setOrigin(0, 1)
+        .refreshBody();
+      this.platforms.group
+        .create(x + this.blockSize, y, 'pipeBlock')
+        .setOrigin(0, 1)
+        .refreshBody();
+    }
+  }
+
+  createPlatformBlocks() {
+    if (!this.scene.textures.exists('platformBlock')) {
+      const platformGraphics = this.scene.add.graphics();
+      platformGraphics.fillStyle(0xa0522d, 1);
+      platformGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      platformGraphics.generateTexture('platformBlock', this.blockSize, this.blockSize);
+      platformGraphics.destroy();
+    }
+
+    // Use the platformRows array defined at the top
+    this.platformRows.forEach(([startGridX, gridY, numBlocks, texture]) => {
+      this.createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture);
+    });
+  }
+
+  createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
+    const startX = startGridX * this.blockSize;
+    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+    for (let i = 0; i < numBlocks; i++) {
+      this.platforms.group
+        .create(startX + i * this.blockSize, y, texture)
+        .setOrigin(0, 0.5)
+        .refreshBody();
+    }
+  }
+
+  createQuestionBlocks() {
+    if (!this.scene.textures.exists('questionBlock')) {
+      const questionBlockGraphics = this.scene.add.graphics();
+      questionBlockGraphics.fillStyle(0xffd700, 1);
+      questionBlockGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      questionBlockGraphics.generateTexture('questionBlock', this.blockSize, this.blockSize);
+      questionBlockGraphics.destroy();
+    }
+
+    if (!this.scene.textures.exists('usedBlock')) {
+      const usedBlockGraphics = this.scene.add.graphics();
+      usedBlockGraphics.fillStyle(0xa9a9a9, 1);
+      usedBlockGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      usedBlockGraphics.generateTexture('usedBlock', this.blockSize, this.blockSize);
+      usedBlockGraphics.destroy();
+    }
+
+    // Use the questionBlocks array defined at the top
+    this.questionBlocks.forEach(([gridX, gridY, contains]) => {
+      this.createQuestionBlock(gridX, gridY, contains);
+    });
+  }
+
+  createQuestionBlock(gridX, gridY, contains) {
+    const x = gridX * this.blockSize;
+    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+
+    const questionBlock = this.platforms.group
+      .create(x, y, 'questionBlock')
+      .setOrigin(0, 0.5)
+      .refreshBody();
+
+    questionBlock.contains = contains;
+    questionBlock.activated = false;
+  }
+
+  createGoombas() {
+    this.goombaPositions.forEach((pos) => {
+      const x = pos.gridX * this.blockSize;
+      const y = this.scene.scale.height - pos.gridY * this.blockSize;
+
+      const goomba = new Goomba(this.scene, x, y, pos.direction);
+      this.goombas.push(goomba);
+    });
+  }
+}
+
+class GreenTurtle {
+  constructor(scene, x, y, direction = -1) {
+    this.scene = scene;
+    this.speed = 30;
+    this.direction = direction;
+    this.jumpTimer = 0;
+    this.hammerTimer = 0;
+    this.hammerInterval = 3000; // throw hammer every 3 seconds (tweak to taste)
+    this.jumpInterval = 2000;   // jump every 2 seconds (randomized inside code)
+    this.state = 'normal';      // 'normal' or 'shell'
+
+    // Create textures if they don't exist
+    this.createTextures();
+
+    // Create sprite
+    this.sprite = this.scene.physics.add.sprite(x, y, 'greenTurtle');
+    this.sprite.setCollideWorldBounds(true);
+    this.sprite.setVelocityX(this.speed * this.direction);
+    // Associate a back-reference so collision callbacks can access this class
+    this.sprite.greenTurtle = this;
+
+    // A group for hammers this turtle throws
+    this.hammers = this.scene.physics.add.group();
+  }
+
+  createTextures() {
+    // Turtle in normal state
+    if (!this.scene.textures.exists('greenTurtle')) {
+      const turtleGraphics = this.scene.add.graphics();
+      turtleGraphics.fillStyle(0x008000, 1); // Green
+      turtleGraphics.fillCircle(16, 16, 16);
+      turtleGraphics.fillStyle(0x000000, 1); // Eye or detail if desired
+      turtleGraphics.fillRect(10, 10, 4, 4);
+      turtleGraphics.generateTexture('greenTurtle', 32, 32);
+      turtleGraphics.destroy();
+    }
+
+    // Turtle shell
+    if (!this.scene.textures.exists('greenShell')) {
+      const shellGraphics = this.scene.add.graphics();
+      shellGraphics.fillStyle(0x008000, 1); // Green
+      shellGraphics.fillCircle(16, 16, 16);
+      shellGraphics.fillStyle(0xffffff, 1);
+      shellGraphics.fillRect(8, 14, 16, 4);
+      shellGraphics.generateTexture('greenShell', 32, 32);
+      shellGraphics.destroy();
+    }
+
+    // Hammer
+    if (!this.scene.textures.exists('hammer')) {
+      const hammerGraphics = this.scene.add.graphics();
+      hammerGraphics.fillStyle(0x333333, 1); // Dark gray
+      // Head of hammer
+      hammerGraphics.fillRect(0, 0, 12, 6);
+      // Handle
+      hammerGraphics.fillStyle(0x654321, 1); 
+      hammerGraphics.fillRect(4, 6, 4, 10);
+      hammerGraphics.generateTexture('hammer', 12, 16);
+      hammerGraphics.destroy();
+    }
+  }
+
+  update(time, delta) {
+    // If the turtle is in shell state, it shouldn't move on its own
+    if (this.state === 'shell') {
+      this.sprite.setVelocityX(0);
+      return;
+    }
+
+    // Basic left-right logic
+    if (this.sprite.body.blocked.left || this.sprite.body.touching.left) {
+      this.direction = 1;
+      this.sprite.setVelocityX(this.speed * this.direction);
+    } else if (this.sprite.body.blocked.right || this.sprite.body.touching.right) {
+      this.direction = -1;
+      this.sprite.setVelocityX(this.speed * this.direction);
+    }
+
+    // Jump logic
+    this.jumpTimer += delta;
+    if (this.jumpTimer > this.jumpInterval) {
+      this.jumpTimer = 0;
+      // Attempt a jump if on ground
+      if (this.sprite.body.blocked.down) {
+        this.sprite.setVelocityY(-200);
+      }
+      // Optionally randomize next jump interval
+      this.jumpInterval = Phaser.Math.Between(2000, 4000);
+    }
+
+    // Hammer throwing logic
+    this.hammerTimer += delta;
+    if (this.hammerTimer > this.hammerInterval) {
+      this.hammerTimer = 0;
+      this.throwHammer();
+    }
+  }
+
+  throwHammer() {
+    // Create a hammer sprite
+    const hammer = this.hammers.create(this.sprite.x, this.sprite.y - 10, 'hammer');
+    // Hammer should have a slight arc or just horizontal velocity
+    let hammerSpeed = 100;
+    hammer.body.allowGravity = true; 
+    hammer.setBounce(0.2);
+
+    // Throw in same direction as turtle is facing
+    hammer.setVelocityX(this.direction * hammerSpeed);
+    // Give it a bit of upward velocity for an arc
+    hammer.setVelocityY(-50);
+
+    // Destroy the hammer after some time to avoid clutter
+    this.scene.time.addEvent({
+      delay: 4000,
+      callback: () => {
+        if (hammer.active) {
+          hammer.destroy();
+        }
+      },
+    });
+  }
+
+  handlePlayerCollision(playerSprite, playerObj, onGameOverCallback) {
+    // If the turtle is normal
+    if (this.state === 'normal') {
+      // Check if Mario stomped from above
+      if (
+        playerSprite.body.touching.down &&
+        this.sprite.body.touching.up
+      ) {
+        // Transform turtle into shell
+        this.transformIntoShell();
+        // Mario bounces
+        playerSprite.setVelocityY(-300);
+      } else {
+        // Otherwise, it's game over for Mario
+        if (onGameOverCallback) onGameOverCallback();
+      }
+    } else {
+      // If the turtle is already a shell
+      // If Mario hits from above again => maybe do nothing, or could "kick" the shell
+      if (
+        playerSprite.body.touching.down &&
+        this.sprite.body.touching.up
+      ) {
+        // Optional: bounce Mario up slightly
+        playerSprite.setVelocityY(-300);
+      } else {
+        // Collisions from side => game-over
+        if (onGameOverCallback) onGameOverCallback();
+      }
+    }
+  }
+
+  transformIntoShell() {
+    this.state = 'shell';
+    this.sprite.setTexture('greenShell');
+  }
+
+  handleHammerCollision(playerSprite, playerObj, hammer, onGameOverCallback) {
+    // If hammer overlaps Mario => game over
+    if (onGameOverCallback) onGameOverCallback();
+  }
+}
