@@ -1,14 +1,3 @@
-**Question**
-
-Model: `o1`
-
-```
-#selection Just like a Mario game there should be holes in the ground. if Mario falls through it, he is game over. Put the holes on the right side of the blocks that block the Goombas. Give me the complete solution.
-```
-
-**Solutions o1**
-
-```ts
 const config = {
   type: Phaser.AUTO,
   width: 800,
@@ -309,6 +298,27 @@ class Platforms {
     this.createQuestionBlocks();
   }
 
+  createGround(worldWidth) {
+    const groundGraphics = this.scene.add.graphics();
+    groundGraphics.fillStyle(0x8B4513, 1);
+    groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+    groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
+    groundGraphics.destroy();
+
+    const numBlocks = Math.ceil(worldWidth / this.blockSize);
+
+    for (let x = 0; x <= numBlocks; x++) {
+      // Skip a small range to create a hole
+      if ((x >= 30 && x <= 32) || (x >= 35 && x <= 37)) {
+        continue;
+      }
+      this.group
+        .create(x * this.blockSize, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
+        .setOrigin(0, 0.5)
+        .refreshBody();
+    }
+  }
+
   createLevelPlatforms() {
     if (!this.scene.textures.exists('platformBlock')) {
       const platformGraphics = this.scene.add.graphics();
@@ -338,27 +348,6 @@ class Platforms {
     for (let i = 0; i < numBlocks; i++) {
       this.group
         .create(startX + i * this.blockSize, y, texture)
-        .setOrigin(0, 0.5)
-        .refreshBody();
-    }
-  }
-
-  createGround(worldWidth) {
-    const groundGraphics = this.scene.add.graphics();
-    groundGraphics.fillStyle(0x8B4513, 1);
-    groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-    groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
-    groundGraphics.destroy();
-
-    const numBlocks = Math.ceil(worldWidth / this.blockSize);
-
-    for (let x = 0; x <= numBlocks; x++) {
-      // Skip a small range to create a hole
-      if (x >= 30 && x <= 32) {
-        continue;
-      }
-      this.group
-        .create(x * this.blockSize, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
         .setOrigin(0, 0.5)
         .refreshBody();
     }
@@ -422,4 +411,3 @@ class Goomba {
     }
   }
 }
-```
