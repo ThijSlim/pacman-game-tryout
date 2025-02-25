@@ -90,9 +90,14 @@ function update() {
   // Update the player
   player.update(cursors);
 
-    // Update Goombas
-    goomba1.update();
-    goomba2.update();
+  // Update Goombas
+  goomba1.update();
+  goomba2.update();
+
+  // Check if Mario falls through a hole
+  if (player.sprite.y >= this.physics.world.bounds.height) {
+    gameOver.call(this);
+  }
 }
 
 function reverseGoombaDirection(goombaSprite1, goombaSprite2) {
@@ -222,6 +227,12 @@ function collectPowerUp(playerSprite, powerUp) {
   });
 }
 
+function gameOver() {
+  this.physics.pause();
+  player.sprite.setTint(0xff0000);
+  // Add game over logic here
+}
+
 class Mario {
   constructor(scene, x, y) {
     this.scene = scene;
@@ -326,16 +337,14 @@ class Platforms {
     // Define block size
     this.blockSize = 32; // Size of each block in pixels
 
-    // Create ground blocks
-    this.createGround(worldWidth);
+    // Create ground blocks with holes
+    this.createGroundWithHoles(worldWidth);
 
     // Create platforms
     this.createLevelPlatforms();
 
     // Create question blocks
     this.createQuestionBlocks();
-
-    // Create question blocks
   }
 
   createLevelPlatforms() {
@@ -375,7 +384,7 @@ class Platforms {
     }
   }
 
-  createGround(worldWidth) {
+  createGroundWithHoles(worldWidth) {
     // Create platform graphics for ground blocks
     const groundGraphics = this.scene.add.graphics();
     groundGraphics.fillStyle(0x8B4513, 1); // Brown color for ground
@@ -384,15 +393,17 @@ class Platforms {
     groundGraphics.destroy();
 
     const numBlocks = Math.ceil(worldWidth / this.blockSize);
+    const holePositions = [10, 20, 30]; // Positions of holes in the ground
+
     for (let x = 0; x <= numBlocks; x++) {
-      this.group
-        .create(x * this.blockSize, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
-        .setOrigin(0, 0.5)
-        .refreshBody();
+      if (!holePositions.includes(x)) {
+        this.group
+          .create(x * this.blockSize, this.scene.scale.height - this.blockSize / 2, 'groundBlock')
+          .setOrigin(0, 0.5)
+          .refreshBody();
+      }
     }
   }
-
-
 
   createQuestionBlock(gridX, gridY, contains) {
     const x = gridX * this.blockSize;
