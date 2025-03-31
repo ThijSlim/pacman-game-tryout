@@ -127,7 +127,7 @@ function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
   }
 }
 
-function breakBlock(this: Phaser.Scene, block) {
+function breakBlock(this: Phaser.Scene, block: { x: any; y: any; destroy: () => void; }) {
   const x = block.x;
   const y = block.y;
 
@@ -166,7 +166,7 @@ function breakBlock(this: Phaser.Scene, block) {
   scoreText.setText('Score: ' + score);
 }
 
-function spawnPowerUp(this: Phaser.Scene, x, y) {
+function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
   if (!this.textures.exists('powerUp')) {
     const powerUpGraphics = this.add.graphics();
     powerUpGraphics.fillStyle(0xff0000, 1);
@@ -188,7 +188,7 @@ function spawnPowerUp(this: Phaser.Scene, x, y) {
   this.physics.add.overlap(player.sprite, powerUp, collectPowerUp, undefined, this);
 }
 
-function spawnCoin(this: Phaser.Scene, x, y) {
+function spawnCoin(this: Phaser.Scene, x: number, y: number) {
   if (!this.textures.exists('coin')) {
     const coinGraphics = this.add.graphics();
     coinGraphics.fillStyle(0xffff00, 1);
@@ -212,7 +212,7 @@ function spawnCoin(this: Phaser.Scene, x, y) {
   });
 }
 
-function collectPowerUp(this: Phaser.Scene, playerSprite, powerUp) {
+function collectPowerUp(this: Phaser.Scene, playerSprite: any, powerUp: { destroy: () => void; }) {
   powerUp.destroy();
 
   var scaleFactor = 1.5;
@@ -245,7 +245,7 @@ function endGame(this: Phaser.Scene) {
   gameOverText.setOrigin(0.5);
 }
 
-function reachFinishingPole(this: Phaser.Scene, playerSprite, flag) {
+function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
   if (levelCompleted) return;
   levelCompleted = true;
 
@@ -304,7 +304,7 @@ function reachFinishingPole(this: Phaser.Scene, playerSprite, flag) {
           restartText.setOrigin(0.5);
 
           // Add event listener for restart
-          this.input.keyboard.once('keydown-SPACE', () => {
+          this.input.keyboard?.once('keydown-SPACE', () => {
             this.scene.restart();
             score = 0;
             gameOver = false;
@@ -321,7 +321,7 @@ class Mario {
   sprite: any;
   moveSpeed: number;
   
-  constructor(scene, x, y) {
+  constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
 
     const blockSize = 32;
@@ -408,7 +408,7 @@ class Platforms {
   group: any;
   blockSize: any;
   holes: any;
-  constructor(scene, worldWidth, blockSize, holes) {
+  constructor(scene: any, worldWidth: any, blockSize: number, holes: number[][]) {
     this.scene = scene;
     this.group = this.scene.physics.add.staticGroup();
     this.blockSize = blockSize;
@@ -417,7 +417,7 @@ class Platforms {
     this.createGround(worldWidth);
   }
 
-  createGround(worldWidth) {
+  createGround(worldWidth: number) {
     if (!this.scene.textures.exists('groundBlock')) {
       const groundGraphics = this.scene.add.graphics();
       groundGraphics.fillStyle(0x8b4513, 1);
@@ -443,7 +443,7 @@ class Platforms {
     }
   }
 
-  isInHole(blockIndex) {
+  isInHole(blockIndex: number) {
     for (const [start, end] of this.holes) {
       if (blockIndex >= start && blockIndex < end) {
         return true;
@@ -458,7 +458,7 @@ class Goomba {
   speed: number;
   direction: number;
   sprite: any;
-  constructor(scene, x, y, direction = -1) {
+  constructor(scene: { physics: { add: { sprite: (arg0: any, arg1: any, arg2: string) => any; }; }; }, x: number, y: number, direction = -1) {
     this.scene = scene;
     this.speed = 50;
     this.direction = direction;
@@ -492,7 +492,7 @@ class Goomba {
     }
   }
 
-  handlePlayerCollision(playerSprite, playerObj, onStompedCallback, onGameOverCallback) {
+  handlePlayerCollision(playerSprite: any, playerObj: Mario, onStompedCallback: { (): void; (): void; }, onGameOverCallback: { (): void; (): void; }) {
     // If player hits Goomba from above
     if (playerSprite.body.touching.down && this.sprite.body.touching.up) {
       // Goomba defeated
@@ -505,7 +505,7 @@ class Goomba {
     }
   }
 
-  handleGoombaCollision(goombaSprite1, goombaSprite2) {
+  handleGoombaCollision(goombaSprite1: any, goombaSprite2: any) {
     // Reverse direction for both goombas
     const goomba1 = goombaSprite1.goomba;
     const goomba2 = goombaSprite2.goomba;
@@ -534,7 +534,7 @@ class Level {
   pole: any;
   flag: any;
   castle: any;
-  constructor(scene, worldWidth) {
+  constructor(scene: Phaser.Scene, worldWidth: number) {
     this.scene = scene;
     this.blockSize = 32;
 
@@ -620,7 +620,7 @@ class Level {
     });
   }
 
-  createPipeAtGrid(gridX, heightInBlocks) {
+  createPipeAtGrid(gridX: number, heightInBlocks: number) {
     const x = gridX * this.blockSize;
     const groundY = this.scene.scale.height - this.blockSize;
 
@@ -647,12 +647,12 @@ class Level {
     }
 
     // Use the platformRows array defined at the top
-    this.platformRows.forEach(([startGridX, gridY, numBlocks, texture]) => {
-      this.createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture);
+    this.platformRows.forEach(([startGridX, gridY, numBlocks, texture]) => { 
+      this.createPlatformRowAtGrid(startGridX as number, gridY as number, numBlocks as number, texture as string);
     });
   }
 
-  createPlatformRowAtGrid(startGridX, gridY, numBlocks, texture) {
+  createPlatformRowAtGrid(startGridX: number, gridY: number, numBlocks: number, texture: string) {
     const startX = startGridX * this.blockSize;
     const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
     for (let i = 0; i < numBlocks; i++) {
@@ -681,12 +681,12 @@ class Level {
     }
 
     // Use the questionBlocks array defined at the top
-    this.questionBlocks.forEach(([gridX, gridY, contains]) => {
-      this.createQuestionBlock(gridX, gridY, contains);
+    this.questionBlocks.forEach(([gridX , gridY, contains]) => {
+      this.createQuestionBlock(gridX as number, gridY as number, contains as string);
     });
   }
 
-  createQuestionBlock(gridX, gridY, contains) {
+  createQuestionBlock(gridX: number, gridY: number, contains: string | number) {
     const x = gridX * this.blockSize;
     const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
 
