@@ -8,18 +8,20 @@ const server = new McpServer({
 });
 
 
-// server.tool("getWeather", "", {
-//   city: z.string().describe("The city to get weather for")
-// }, (args, extra) => {
-//   return {
-//     content: [
-//       {
-//         type: 'text',
-//         text: `Weather in ${args.city} is currently sunny with a temperature of 72°F.`
-//       }
-//     ]
-//   };
-// });
+server.tool("implementMarioFeature", "Implement Mario Feature", {
+  feature: z.string().describe("Feature to implement"),
+}, (args, extra) => {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `Implement the ${args.feature} feature inside the Mario Game File.\n\n1. Describe the feature and its mechanics in detail.\n2. Outline the steps required to implement the feature in the Mario Game File.\n3. Implement the feature inside the Mario Game file.`
+
+      }
+    ]
+  };
+});
+
 
 server.resource(
   "marioGameFile",
@@ -46,6 +48,8 @@ server.prompt("getMarioGameMechanics", "Get Mario Game Mechanics", {
     ]
   };
 });
+
+
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

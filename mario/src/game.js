@@ -21,6 +21,7 @@ let cursors;
 let score = 0;
 let scoreText;
 let gameOver = false;
+let levelCompleted = false;
 let level;
 
 const game = new Phaser.Game(config);
@@ -45,10 +46,13 @@ function create() {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 300, 450);
+  player = new Mario(this, 2200, 450); // Adjusted Mario's starting position to spawn more in the back
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, null, this);
+  
+  // Add flag collision detection
+  this.physics.add.overlap(player.sprite, level.flag, reachFinishingPole, null, this);
 
   // Setup Goomba collisions
   level.goombas.forEach((goomba) => {
@@ -80,7 +84,7 @@ function create() {
 }
 
 function update() {
-  if (gameOver) return;
+  if (gameOver || levelCompleted) return;
 
   player.update(cursors);
 
@@ -237,6 +241,77 @@ function endGame() {
     { fontSize: '64px', fill: '#000' }
   );
   gameOverText.setOrigin(0.5);
+}
+
+function reachFinishingPole(playerSprite, flag) {
+  if (levelCompleted) return;
+  levelCompleted = true;
+
+  // Store blockSize for proper positioning
+  const blockSize = level.blockSize;
+
+  // Ensure Mario is aligned with the pole
+  playerSprite.x = level.pole.x;
+
+  // Stop player horizontal movement
+  playerSprite.setVelocityX(0);
+
+  // Animate the flag going down
+  this.tweens.add({
+    targets: flag,
+    y: this.scale.height - blockSize * 2, // Use blockSize
+    duration: 1000,
+    ease: 'Linear',
+  });
+
+  // Animate Mario sliding down the pole
+  this.tweens.add({
+    targets: playerSprite,
+    y: this.scale.height - blockSize * 2, // Use blockSize
+    duration: 1000,
+    ease: 'Linear',
+    onComplete: () => {
+      // Make Mario move automatically to the castle
+      playerSprite.setVelocityX(100);
+
+      // Once Mario reaches the castle, show level complete message
+      this.time.delayedCall(1500, () => {
+        // Stop all movement
+        this.physics.pause();
+
+        // Make Mario disappear (entered the castle)
+        playerSprite.setVisible(false);
+
+        // Display level complete message
+        const completedText = this.add.text(
+          this.cameras.main.midPoint.x,
+          this.cameras.main.midPoint.y,
+          'Level Complete!\nScore: ' + score,
+          { fontSize: '48px', fill: '#000', align: 'center' }
+        );
+        completedText.setOrigin(0.5);
+
+        // Set up for next level or restart
+        this.time.delayedCall(3000, () => {
+          const restartText = this.add.text(
+            this.cameras.main.midPoint.x,
+            this.cameras.main.midPoint.y + 100,
+            'Press SPACE to restart',
+            { fontSize: '24px', fill: '#000' }
+          );
+          restartText.setOrigin(0.5);
+
+          // Add event listener for restart
+          this.input.keyboard.once('keydown-SPACE', () => {
+            this.scene.restart();
+            score = 0;
+            gameOver = false;
+            levelCompleted = false;
+          });
+        });
+      });
+    },
+  });
 }
 
 class Mario {
@@ -435,8 +510,8 @@ class Level {
 
     // All grid-based configuration
     this.holes = [
-      [60, 65],
-      [70, 75],
+      [60, 65], // First hole
+      // Removed the hole at [70, 75] which was under the flag
     ];
 
     // Pipe positions: [gridX, heightInBlocks]
@@ -454,6 +529,18 @@ class Level {
       [23, 4, 1, 'platformBlock'],
     ];
 
+    // Stairs configuration near the finishing pole - extended for longer runway
+    this.stairBlocks = [
+      [62, 1, 4], // [startGridX, heightBlocks, numBlocks] - first stair (moved earlier)
+      [63, 2, 3], // second stair (moved earlier)
+      [64, 3, 2], // third stair (moved earlier)
+      [65, 4, 1], // fourth stair (moved earlier)
+      [67, 1, 4], // Additional stairs for longer runway
+      [68, 2, 3],
+      [69, 3, 2],
+      [70, 4, 1],
+    ];
+
     // Question blocks: gridX, gridY, contains
     this.questionBlocks = [
       [16, 4, 'coin'],
@@ -469,6 +556,9 @@ class Level {
       { gridX: 52, gridY: 4, direction: 1 },
       { gridX: 53, gridY: 4, direction: -1 },
     ];
+    
+    // Finishing pole position (near end of level)
+    this.finishingPolePosition = 72;
 
     // Create all platforms and environment
     this.platforms = new Platforms(this.scene, worldWidth, this.blockSize, this.holes);
@@ -477,6 +567,8 @@ class Level {
     this.createGreenPipes();
     this.createPlatformBlocks();
     this.createQuestionBlocks();
+    this.createFinishingPole();
+    this.createStairs(); // Add stairs to reach the top of the pole
 
     // Add Goombas
     this.goombas = [];
@@ -584,6 +676,80 @@ class Level {
 
       const goomba = new Goomba(this.scene, x, y, pos.direction);
       this.goombas.push(goomba);
+    });
+  }
+  
+  createFinishingPole() {
+    // Create textures for flag and pole if they don't exist
+    if (!this.scene.textures.exists('poleTexture')) {
+      const poleGraphics = this.scene.add.graphics();
+      poleGraphics.fillStyle(0xC0C0C0, 1); // Silver color
+      poleGraphics.fillRect(0, 0, 8, this.blockSize * 8);
+      poleGraphics.generateTexture('poleTexture', 8, this.blockSize * 8);
+      poleGraphics.destroy();
+    }
+    
+    if (!this.scene.textures.exists('flagTexture')) {
+      const flagGraphics = this.scene.add.graphics();
+      flagGraphics.fillStyle(0x008000, 1); // Green flag
+      flagGraphics.fillRect(0, 0, 32, 32);
+      flagGraphics.generateTexture('flagTexture', 32, 32);
+      flagGraphics.destroy();
+    }
+    
+    // Position the flag at the top of the pole
+    const poleX = this.finishingPolePosition * this.blockSize;
+    const groundY = this.scene.scale.height - this.blockSize;
+    const poleHeight = this.blockSize * 8;
+    
+    // Create the pole (static, not collidable)
+    this.pole = this.scene.add.sprite(poleX, groundY - poleHeight/2, 'poleTexture');
+    
+    // Create the flag as a physics object for collision detection
+    this.flag = this.scene.physics.add.sprite(poleX + 16, groundY - poleHeight + 16, 'flagTexture');
+    this.flag.body.allowGravity = false;
+    this.flag.isFlag = true; // Mark this object as a flag for collision handling
+    
+    // Create a small castle at the end
+    if (!this.scene.textures.exists('castleTexture')) {
+      const castleGraphics = this.scene.add.graphics();
+      castleGraphics.fillStyle(0xA52A2A, 1); // Brown castle
+      castleGraphics.fillRect(0, 0, this.blockSize * 3, this.blockSize * 3);
+      // Add a small door
+      castleGraphics.fillStyle(0x000000, 1);
+      castleGraphics.fillRect(this.blockSize, this.blockSize * 1.5, this.blockSize, this.blockSize * 1.5);
+      castleGraphics.generateTexture('castleTexture', this.blockSize * 3, this.blockSize * 3);
+      castleGraphics.destroy();
+    }
+    
+    // Add the castle just after the pole
+    this.castle = this.scene.add.sprite(poleX + (this.blockSize * 4), groundY - (this.blockSize * 1.5), 'castleTexture');
+  }
+
+  createStairs() {
+    if (!this.scene.textures.exists('stairBlock')) {
+      const stairGraphics = this.scene.add.graphics();
+      stairGraphics.fillStyle(0x8b4513, 1); // Brown color for stairs
+      stairGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
+      stairGraphics.lineStyle(2, 0x5c2d11); // Darker outline
+      stairGraphics.strokeRect(0, 0, this.blockSize, this.blockSize);
+      stairGraphics.generateTexture('stairBlock', this.blockSize, this.blockSize);
+      stairGraphics.destroy();
+    }
+    
+    // Create each stair section based on stairBlocks configuration
+    this.stairBlocks.forEach(([gridX, heightBlocks, numBlocks]) => {
+      for (let i = 0; i < numBlocks; i++) {
+        for (let j = 0; j < heightBlocks; j++) {
+          const x = (gridX + i) * this.blockSize;
+          const y = this.scene.scale.height - j * this.blockSize - this.blockSize / 2;
+          
+          this.platforms.group
+            .create(x, y, 'stairBlock')
+            .setOrigin(0, 0.5)
+            .refreshBody();
+        }
+      }
     });
   }
 }
