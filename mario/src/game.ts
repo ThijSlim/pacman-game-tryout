@@ -1,3 +1,5 @@
+import Phaser from "phaser";
+
 const config = {
   type: Phaser.AUTO,
   width: 800, // Canvas width remains the same
@@ -24,7 +26,7 @@ let gameOver = false;
 let levelCompleted = false;
 let level;
 
-const game = new Phaser.Game(config);
+const game = new Phaser.Game(config as any);
 
 function preload() {
   // No external assets to load
@@ -315,6 +317,10 @@ function reachFinishingPole(playerSprite, flag) {
 }
 
 class Mario {
+  scene: any;
+  sprite: any;
+  moveSpeed: number;
+  
   constructor(scene, x, y) {
     this.scene = scene;
 
@@ -396,6 +402,10 @@ class Mario {
 }
 
 class Platforms {
+  scene: any;
+  group: any;
+  blockSize: any;
+  holes: any;
   constructor(scene, worldWidth, blockSize, holes) {
     this.scene = scene;
     this.group = this.scene.physics.add.staticGroup();
@@ -442,6 +452,10 @@ class Platforms {
 }
 
 class Goomba {
+  scene: any;
+  speed: number;
+  direction: number;
+  sprite: any;
   constructor(scene, x, y, direction = -1) {
     this.scene = scene;
     this.speed = 50;
@@ -504,6 +518,20 @@ class Goomba {
 
 // The new Level class
 class Level {
+  scene: any;
+  blockSize: number;
+  holes: number[][];
+  pipePositions: number[][];
+  platformRows: (string | number)[][];
+  stairBlocks: number[][];
+  questionBlocks: (string | number)[][];
+  goombaPositions: { gridX: number; gridY: number; direction: number; }[];
+  finishingPolePosition: number;
+  platforms: Platforms;
+  goombas: Goomba[];
+  pole: any;
+  flag: any;
+  castle: any;
   constructor(scene, worldWidth) {
     this.scene = scene;
     this.blockSize = 32;
