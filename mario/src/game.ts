@@ -18,13 +18,13 @@ const config = {
   },
 };
 
-let player;
-let cursors;
+let player: Mario;
+let cursors: Phaser.Types.Input.Keyboard.CursorKeys| undefined;
 let score = 0;
-let scoreText;
+let scoreText: Phaser.GameObjects.Text;
 let gameOver = false;
 let levelCompleted = false;
-let level;
+let level: Level;
 
 const game = new Phaser.Game(config as any);
 
@@ -32,15 +32,15 @@ function preload() {
   // No external assets to load
 }
 
-function create() {
+function create(this: Phaser.Scene) {
   const worldWidth = 2400; // 3 times the original width
   const background = this.add.graphics();
   background.fillStyle(0x87ceeb, 1); // Light blue color
   background.fillRect(0, 0, worldWidth, 600);
 
-  scoreText = this.add.text(16, 16, 'Score: 0', {
+  const scoreText = this.add.text(16, 16, 'Score: 0', {
     fontSize: '32px',
-    fill: '#000',
+    color: '#000',
   });
   scoreText.setScrollFactor(0);
 
@@ -51,10 +51,10 @@ function create() {
   player = new Mario(this, 2200, 450); // Adjusted Mario's starting position to spawn more in the back
 
   // Make player collide with platforms
-  this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, null, this);
+  this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);
   
   // Add flag collision detection
-  this.physics.add.overlap(player.sprite, level.flag, reachFinishingPole, null, this);
+  this.physics.add.overlap(player.sprite, level.flag, reachFinishingPole, undefined, this);
 
   // Setup Goomba collisions
   level.goombas.forEach((goomba) => {
@@ -62,19 +62,19 @@ function create() {
     this.physics.add.collider(goomba.sprite, level.platforms.group);
     
     // Goomba & Player collision - handled inside Goomba class
-    this.physics.add.collider(player.sprite, goomba.sprite, function (playerSprite, goombaSprite) {
+    this.physics.add.collider(player.sprite, goomba.sprite,  (playerSprite, goombaSprite) => {
       goomba.handlePlayerCollision(playerSprite, player, () => {
         score += 50;
         scoreText.setText('Score: ' + score);
       }, endGame.bind(this));
-    }, null, this);
+    }, undefined, this);
 
     // Collide goombas with each other
     level.goombas.forEach((otherGoomba) => {
       if (otherGoomba !== goomba) {
         this.physics.add.collider(goomba.sprite, otherGoomba.sprite, function (goombaSprite1, goombaSprite2) {
           goomba.handleGoombaCollision(goombaSprite1, goombaSprite2);
-        }, null, this);
+        }, undefined, this);
       }
     });
   });
@@ -82,10 +82,10 @@ function create() {
   this.cameras.main.setBounds(0, 0, worldWidth, 600);
   this.cameras.main.startFollow(player.sprite);
 
-  cursors = this.input.keyboard.createCursorKeys();
+  cursors = this.input.keyboard?.createCursorKeys();
 }
 
-function update() {
+function update(this: Phaser.Scene) {
   if (gameOver || levelCompleted) return;
 
   player.update(cursors);
@@ -100,7 +100,7 @@ function update() {
   }
 }
 
-function hitBlock(playerSprite, block) {
+function hitBlock(playerSprite: any, block: any) {
   if (playerSprite.body.touching.up && block.body.touching.down) {
     // If it's a question block and not activated yet
     if (block.texture.key === 'questionBlock' && !block.activated) {

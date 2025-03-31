@@ -10,6 +10,6 @@
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true
     },
-    "include": ["mcp-agent/**/*"],
+    "include": ["mcp-agent/**/*", "src/**/*"],
     "exclude": ["node_modules"]
   }
