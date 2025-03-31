@@ -38,7 +38,7 @@ function create(this: Phaser.Scene) {
   background.fillStyle(0x87ceeb, 1); // Light blue color
   background.fillRect(0, 0, worldWidth, 600);
 
-  const scoreText = this.add.text(16, 16, 'Score: 0', {
+  scoreText = this.add.text(16, 16, 'Score: 0', {
     fontSize: '32px',
     color: '#000',
   });
@@ -100,7 +100,7 @@ function update(this: Phaser.Scene) {
   }
 }
 
-function hitBlock(playerSprite: any, block: any) {
+function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
   if (playerSprite.body.touching.up && block.body.touching.down) {
     // If it's a question block and not activated yet
     if (block.texture.key === 'questionBlock' && !block.activated) {
@@ -127,7 +127,7 @@ function hitBlock(playerSprite: any, block: any) {
   }
 }
 
-function breakBlock(block) {
+function breakBlock(this: Phaser.Scene, block) {
   const x = block.x;
   const y = block.y;
 
@@ -166,7 +166,7 @@ function breakBlock(block) {
   scoreText.setText('Score: ' + score);
 }
 
-function spawnPowerUp(x, y) {
+function spawnPowerUp(this: Phaser.Scene, x, y) {
   if (!this.textures.exists('powerUp')) {
     const powerUpGraphics = this.add.graphics();
     powerUpGraphics.fillStyle(0xff0000, 1);
@@ -185,10 +185,10 @@ function spawnPowerUp(x, y) {
   });
 
   this.physics.add.collider(powerUp, level.platforms.group);
-  this.physics.add.overlap(player.sprite, powerUp, collectPowerUp, null, this);
+  this.physics.add.overlap(player.sprite, powerUp, collectPowerUp, undefined, this);
 }
 
-function spawnCoin(x, y) {
+function spawnCoin(this: Phaser.Scene, x, y) {
   if (!this.textures.exists('coin')) {
     const coinGraphics = this.add.graphics();
     coinGraphics.fillStyle(0xffff00, 1);
@@ -212,7 +212,7 @@ function spawnCoin(x, y) {
   });
 }
 
-function collectPowerUp(playerSprite, powerUp) {
+function collectPowerUp(this: Phaser.Scene, playerSprite, powerUp) {
   powerUp.destroy();
 
   var scaleFactor = 1.5;
@@ -231,7 +231,7 @@ function collectPowerUp(playerSprite, powerUp) {
   });
 }
 
-function endGame() {
+function endGame(this: Phaser.Scene) {
   gameOver = true;
   player.sprite.setTint(0xff0000);
 
@@ -240,12 +240,12 @@ function endGame() {
     this.cameras.main.midPoint.x,
     this.cameras.main.midPoint.y,
     'Game Over',
-    { fontSize: '64px', fill: '#000' }
+    { fontSize: '64px', color: '#000' }
   );
   gameOverText.setOrigin(0.5);
 }
 
-function reachFinishingPole(playerSprite, flag) {
+function reachFinishingPole(this: Phaser.Scene, playerSprite, flag) {
   if (levelCompleted) return;
   levelCompleted = true;
 
@@ -289,7 +289,7 @@ function reachFinishingPole(playerSprite, flag) {
           this.cameras.main.midPoint.x,
           this.cameras.main.midPoint.y,
           'Level Complete!\nScore: ' + score,
-          { fontSize: '48px', fill: '#000', align: 'center' }
+          { fontSize: '48px', color: '#000', align: 'center' }
         );
         completedText.setOrigin(0.5);
 
@@ -299,7 +299,7 @@ function reachFinishingPole(playerSprite, flag) {
             this.cameras.main.midPoint.x,
             this.cameras.main.midPoint.y + 100,
             'Press SPACE to restart',
-            { fontSize: '24px', fill: '#000' }
+            { fontSize: '24px', color: '#000' }
           );
           restartText.setOrigin(0.5);
 
@@ -373,7 +373,9 @@ class Mario {
     });
   }
 
-  update(cursors) {
+  update(cursors: Phaser.Types.Input.Keyboard.CursorKeys| undefined) {
+    if (!cursors) return;
+    
     if (cursors.left.isDown) {
       this.sprite.setVelocityX(-this.moveSpeed);
       this.sprite.anims.play('left', true);
@@ -395,7 +397,7 @@ class Mario {
     }
   }
 
-  collectPowerUp(scaleFactor, speedFactor) {
+  collectPowerUp(scaleFactor: number, speedFactor: number) {
     this.sprite.setScale(scaleFactor);
     this.moveSpeed *= speedFactor;
   }
