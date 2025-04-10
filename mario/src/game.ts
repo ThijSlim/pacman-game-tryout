@@ -50,7 +50,7 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 2200, 450); // Adjusted Mario's starting position to spawn more in the back
+  player = new Mario(this, 100, 450); // Adjusted Mario's starting position to spawn more in the back
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);

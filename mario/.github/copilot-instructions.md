@@ -1,0 +1,1 @@
+- Always use GODOT V3.6

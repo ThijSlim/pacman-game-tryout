@@ -6,7 +6,10 @@ export class Goomba {
   speed: number;
   direction: number;
   sprite: any;
-  constructor(scene: { physics: { add: { sprite: (arg0: any, arg1: any, arg2: string) => any; }; }; }, x: number, y: number, direction = -1) {
+  isJumping: boolean;
+  jumpInterval: number;
+
+  constructor(scene: { physics: { add: { sprite: (arg0: any, arg1: any, arg2: string) => any; }; }; time: { addEvent: (arg0: { delay: number; callback: () => void; loop: boolean; }) => void; delayedCall: (arg0: number, arg1: () => void) => void; }; }, x: number, y: number, direction = -1) {
     this.scene = scene;
     this.speed = 50;
     this.direction = direction;
@@ -23,6 +26,33 @@ export class Goomba {
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setVelocityX(this.speed * this.direction);
     this.sprite.goomba = this;
+
+    this.isJumping = false;
+    this.jumpInterval = Phaser.Math.Between(2000, 4000); // Random jump interval between 2-4 seconds
+
+    this.startJumping();
+  }
+
+  startJumping() {
+    this.scene.time.addEvent({
+      delay: this.jumpInterval,
+      callback: () => {
+        if (!this.isJumping) {
+          this.jump();
+        }
+      },
+      loop: true
+    });
+  }
+
+  jump() {
+    if (this.sprite.body.blocked.down) { // Only jump if on the ground
+      this.isJumping = true;
+      this.sprite.setVelocityY(-400); // Increased jump velocity
+      this.scene.time.delayedCall(500, () => { // Reset jumping state after 500ms
+        this.isJumping = false;
+      });
+    }
   }
 
   update() {
