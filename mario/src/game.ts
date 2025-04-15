@@ -44,10 +44,21 @@ function preload(this: Phaser.Scene) {
   this.load.image('brick-block', 'public/blocks/brick-block.png');
   // Load the background image
   this.load.image('background', 'public/background/repeated-background.png');
+  
+  // Load the pipe sprites
+  this.load.image('pipe-small', 'public/pipes/pipe-small.png');
+  this.load.image('pipe-medium', 'public/pipes/pipe-medium.png');
+  this.load.image('pipe-large', 'public/pipes/pipe-large.png');
 }
 
 function create(this: Phaser.Scene) {
   const worldWidth = 2400; // 3 times the original width
+
+  const background = this.add.graphics();
+  background.fillStyle(0x4b7ffc, 1); 
+  background.fillRect(0, 0, worldWidth, 600);
+  background.setDepth(-2); // Set background depth to -1 to render behind other objects
+
 
   // Create multiple static background images across the entire world
   // This approach uses individual images instead of a scrolling tileSprite

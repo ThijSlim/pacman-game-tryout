@@ -91,14 +91,6 @@ export class Level {
   }
 
   createGreenPipes() {
-    if (!this.scene.textures.exists('pipeBlock')) {
-      const pipeGraphics = this.scene.add.graphics();
-      pipeGraphics.fillStyle(0x008000, 1); // Green
-      pipeGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-      pipeGraphics.generateTexture('pipeBlock', this.blockSize, this.blockSize);
-      pipeGraphics.destroy();
-    }
-
     // Use the pipePositions array defined at the top
     this.pipePositions.forEach(([gridX, heightInBlocks]) => {
       this.createPipeAtGrid(gridX, heightInBlocks);
@@ -109,16 +101,37 @@ export class Level {
     const x = gridX * this.blockSize;
     const groundY = this.scene.scale.height - (2 * this.blockSize); // Adjusted for double-height ground
 
-    for (let i = 0; i < heightInBlocks; i++) {
-      const y = groundY - i * this.blockSize;
-      this.platforms.group
-        .create(x, y, 'pipeBlock')
-        .setOrigin(0, 1)
-        .refreshBody();
-      this.platforms.group
-        .create(x + this.blockSize, y, 'pipeBlock')
-        .setOrigin(0, 1)
-        .refreshBody();
+    // Determine which pipe sprite to use based on height
+    let pipeKey: string;
+
+    switch (heightInBlocks) {
+      case 1:
+        pipeKey = 'pipe-small'; // 32x32px
+        break;
+      case 2:
+        pipeKey = 'pipe-small'; // 32x32px
+        break;
+      case 3:
+        pipeKey = 'pipe-medium'; // 32x48px
+        break;
+      case 4:
+      default:
+        pipeKey = 'pipe-large'; // 32x64px
+        break;
+    }
+
+    // Create the pipe as a static physics object
+    const pipe = this.platforms.group
+      .create(x, groundY, pipeKey)
+      .setOrigin(0, 1)
+      .setScale(2.0)  // Scale up from 16px to 32px
+      .refreshBody();
+
+    // Ensure the pipe sprite has proper collision body
+    if (heightInBlocks === 3) {
+      pipe.body.setSize(32 * 2, 48 * 2).setOffset(0); // Adjusted offset for 3-block height
+    } else if (heightInBlocks === 4) {
+      pipe.body.setSize(32 * 2, 64 * 2).setOffset(0); // Adjusted offset for 4-block height
     }
   }
 
