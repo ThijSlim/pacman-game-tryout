@@ -35,6 +35,11 @@ function preload(this: Phaser.Scene) {
   this.load.image('mario-running', 'public/mario/mario-running.png');
   this.load.image('mario-jumping', 'public/mario/mario-jumping.png');
   
+  // Load the goomba sprites
+  this.load.image('goomba-1', 'public/goomba/goomba-1.png');
+  this.load.image('goomba-2', 'public/goomba/goomba-2.png');
+  this.load.image('goomba-dead', 'public/goomba/goomba-dead.png');
+  
   // Load the coin block sprites
   this.load.image('coin-block-active', 'public/blocks/coin-block-active.png');
   this.load.image('coin-block-deactive', 'public/blocks/coin-block-deactive.png');
