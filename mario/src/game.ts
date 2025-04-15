@@ -30,14 +30,16 @@ let level: Level;
 
 const game = new Phaser.Game(config as any);
 
-function preload() {
-  // No external assets to load
+function preload(this: Phaser.Scene) {
+  // Load Mario sprites
+  this.load.image('mario-default', 'public/mario/mario-default.png');
+  this.load.image('mario-running', 'public/mario/mario-running.png');
 }
 
 function create(this: Phaser.Scene) {
   const worldWidth = 2400; // 3 times the original width
   const background = this.add.graphics();
-  background.fillStyle(0x87ceeb, 1); // Light blue color
+  background.fillStyle(0x5972ff, 1); // Updated to requested blue color (5871ff)
   background.fillRect(0, 0, worldWidth, 600);
 
   scoreText = this.add.text(16, 16, 'Score: 0', {

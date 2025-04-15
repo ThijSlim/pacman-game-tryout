@@ -4,56 +4,52 @@ export class Mario {
   scene: any;
   sprite: any;
   moveSpeed: number;
+  isRunning: boolean;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    this.scene = scene;
-
-    const blockSize = 32;
-    const scaleFactor = 1;
-    const marioHeight = blockSize;
-    const marioWidth = (2 / 3) * marioHeight;
-
-    const marioGraphics = scene.add.graphics();
-    // Head
-    marioGraphics.fillStyle(0xffcc99, 1);
-    marioGraphics.fillCircle(marioWidth / 2, marioHeight / 4, marioHeight / 4);
-    // Body
-    marioGraphics.fillStyle(0xff0000, 1);
-    marioGraphics.fillRect(0, marioHeight / 2, marioWidth, marioHeight / 2);
-
-    marioGraphics.generateTexture('marioTexture', marioWidth, marioHeight);
-    marioGraphics.destroy();
-
-    this.sprite = scene.physics.add
-      .sprite(x, y, 'marioTexture')
-      .setOrigin(0.5, 1);
-    this.sprite.setCollideWorldBounds(false);
-    this.sprite.setBounce(0);
-    this.sprite.body.setSize(marioWidth, marioHeight).setOffset(0, 0);
-    this.moveSpeed = 220;
-
-    this.createAnimations();
+    constructor(scene: Phaser.Scene, x: number, y: number) {
+      this.scene = scene;
+      this.isRunning = false;
+  
+      const blockSize = 32;
+      const marioHeight = 16; // Mario's actual sprite height
+      const marioWidth = 16;  // Assuming Mario's width is also 16px
+      
+      // Create sprite using the loaded image
+      this.sprite = scene.physics.add
+        .sprite(x, y, 'mario-default')
+        .setOrigin(0.5, 1);  // Set origin to bottom center
+        
+      // Scale to make Mario fit within a block
+      // If sprite is 16px and block is 32px, scale = 2.0
+      this.sprite.setScale(2.0);
+      
+      this.sprite.setCollideWorldBounds(false);
+      this.sprite.setBounce(0);
+      // Set physics body to match visual appearance
+      this.sprite.body.setSize(marioWidth, marioHeight).setOffset(0, 0);
+      this.moveSpeed = 220;
+  
+      this.createAnimations();
   }
 
   createAnimations() {
+    // Create running animation by alternating between default and running sprites
     this.scene.anims.create({
-      key: 'left',
-      frames: [{ key: 'marioTexture' }],
-      frameRate: 10,
-      repeat: -1,
+      key: 'running',
+      frames: [
+        { key: 'mario-default' },
+        { key: 'mario-running' }
+      ],
+      frameRate: 8,
+      repeat: -1
     });
 
+    // Standing animation just uses the default sprite
     this.scene.anims.create({
-      key: 'turn',
-      frames: [{ key: 'marioTexture' }],
-      frameRate: 20,
-    });
-
-    this.scene.anims.create({
-      key: 'right',
-      frames: [{ key: 'marioTexture' }],
+      key: 'standing',
+      frames: [{ key: 'mario-default' }],
       frameRate: 10,
-      repeat: -1,
+      repeat: 0
     });
   }
 
@@ -62,15 +58,18 @@ export class Mario {
 
     if (cursors.left.isDown) {
       this.sprite.setVelocityX(-this.moveSpeed);
-      this.sprite.anims.play('left', true);
+      this.sprite.anims.play('running', true);
       this.sprite.setFlipX(true);
+      this.isRunning = true;
     } else if (cursors.right.isDown) {
       this.sprite.setVelocityX(this.moveSpeed);
-      this.sprite.anims.play('right', true);
+      this.sprite.anims.play('running', true);
       this.sprite.setFlipX(false);
+      this.isRunning = true;
     } else {
       this.sprite.setVelocityX(0);
-      this.sprite.anims.play('turn');
+      this.sprite.anims.play('standing');
+      this.isRunning = false;
     }
 
     if (cursors.up.isDown &&
@@ -80,7 +79,7 @@ export class Mario {
   }
 
   collectPowerUp(scaleFactor: number, speedFactor: number) {
-    this.sprite.setScale(scaleFactor);
+    this.sprite.setScale(1.0 * scaleFactor); // Adjust based on new base scale of 1.0
     this.moveSpeed *= speedFactor;
   }
 }
