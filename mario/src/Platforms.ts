@@ -1,4 +1,3 @@
-
 export class Platforms {
   scene: any;
   group: any;
@@ -14,28 +13,24 @@ export class Platforms {
   }
 
   createGround(worldWidth: number) {
-    if (!this.scene.textures.exists('groundBlock')) {
-      const groundGraphics = this.scene.add.graphics();
-      groundGraphics.fillStyle(0x8b4513, 1);
-      groundGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-      groundGraphics.generateTexture('groundBlock', this.blockSize, this.blockSize);
-      groundGraphics.destroy();
-    }
-
     const numBlocks = Math.ceil(worldWidth / this.blockSize);
 
-    for (let x = 0; x <= numBlocks; x++) {
-      if (this.isInHole(x)) {
-        continue;
+    // Create two layers of ground blocks
+    for (let y = 0; y < 2; y++) {
+      for (let x = 0; x <= numBlocks; x++) {
+        if (this.isInHole(x)) {
+          continue;
+        }
+        const groundBlock = this.group
+          .create(
+            x * this.blockSize,
+            this.scene.scale.height - (y * this.blockSize) - this.blockSize / 2,
+            'ground-block'
+          )
+          .setOrigin(0, 0.5)
+          .setScale(2.0)  // Scale up from 16px to 32px
+          .refreshBody();
       }
-      this.group
-        .create(
-          x * this.blockSize,
-          this.scene.scale.height - this.blockSize / 2,
-          'groundBlock'
-        )
-        .setOrigin(0, 0.5)
-        .refreshBody();
     }
   }
 

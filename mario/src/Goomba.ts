@@ -46,7 +46,7 @@ export class Goomba {
   }
 
   jump() {
-    if (this.sprite.body.blocked.down) { // Only jump if on the ground
+    if (this.sprite.body?.blocked.down) { // Only jump if on the ground
       this.isJumping = true;
       this.sprite.setVelocityY(-400); // Increased jump velocity
       this.scene.time.delayedCall(500, () => { // Reset jumping state after 500ms

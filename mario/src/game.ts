@@ -31,16 +31,39 @@ let level: Level;
 const game = new Phaser.Game(config as any);
 
 function preload(this: Phaser.Scene) {
-  // Load Mario sprites
   this.load.image('mario-default', 'public/mario/mario-default.png');
   this.load.image('mario-running', 'public/mario/mario-running.png');
+  this.load.image('mario-jumping', 'public/mario/mario-jumping.png');
+  
+  // Load the coin block sprites
+  this.load.image('coin-block-active', 'public/blocks/coin-block-active.png');
+  this.load.image('coin-block-deactive', 'public/blocks/coin-block-deactive.png');
+  // Load the ground block sprite
+  this.load.image('ground-block', 'public/blocks/ground-block.png');
+  // Load the brick block sprite
+  this.load.image('brick-block', 'public/blocks/brick-block.png');
+  // Load the background image
+  this.load.image('background', 'public/background/repeated-background.png');
 }
 
 function create(this: Phaser.Scene) {
   const worldWidth = 2400; // 3 times the original width
-  const background = this.add.graphics();
-  background.fillStyle(0x5972ff, 1); // Updated to requested blue color (5871ff)
-  background.fillRect(0, 0, worldWidth, 600);
+
+  // Create multiple static background images across the entire world
+  // This approach uses individual images instead of a scrolling tileSprite
+  const bgHeight = config.height;
+  const bgWidth = 1500;
+  const numBackgrounds = Math.ceil(worldWidth / bgWidth);
+  
+  // Create multiple background images placed side by side
+  // Offset the background 64 pixels from the bottom to position it above the floor tiles
+  for (let i = 0; i < numBackgrounds; i++) {
+    this.add.image(i * bgWidth, 0, 'background')
+      .setOrigin(0, 0)
+      .setDisplaySize(bgWidth, bgHeight - 64) // Reduce height to account for bottom offset
+      .setDepth(-1)
+      .setScrollFactor(1); // Makes it static relative to the world (not the camera)
+  }
 
   scoreText = this.add.text(16, 16, 'Score: 0', {
     fontSize: '32px',
@@ -52,7 +75,7 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 100, 450); // Adjusted Mario's starting position to spawn more in the back
+  player = new Mario(this, 100, 450 - 32); // Adjusted spawn height for double-height ground
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);
@@ -106,10 +129,11 @@ function update(this: Phaser.Scene) {
 
 function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
   if (playerSprite.body.touching.up && block.body.touching.down) {
-    // If it's a question block and not activated yet
-    if (block.texture.key === 'questionBlock' && !block.activated) {
+    // If it's a coin block and not activated yet
+    if (block.texture.key === 'coin-block-active' && !block.activated) {
       block.activated = true;
-      block.setTexture('usedBlock');
+      block.setTexture('coin-block-deactive')
+          .setScale(2.0); // Maintain scale when changing texture
 
       if (block.contains === 'coin') {
         spawnCoin.call(this, block.x + block.width / 2, block.y - block.height);
@@ -122,8 +146,8 @@ function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
           block.y - block.height
         );
       }
-    } else if (block.texture.key === 'usedBlock') {
-      // No action
+    } else if (block.texture.key === 'coin-block-deactive') {
+      // No action for already hit blocks
     } else {
       // Normal block: break it
       breakBlock.call(this, block);
@@ -265,7 +289,7 @@ function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
   // Animate the flag going down
   this.tweens.add({
     targets: flag,
-    y: this.scale.height - blockSize * 2, // Use blockSize
+    y: this.scale.height - blockSize * 3, // Adjusted for double-height ground
     duration: 1000,
     ease: 'Linear',
   });
@@ -273,7 +297,7 @@ function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
   // Animate Mario sliding down the pole
   this.tweens.add({
     targets: playerSprite,
-    y: this.scale.height - blockSize * 2, // Use blockSize
+    y: this.scale.height - blockSize * 3, // Adjusted for double-height ground
     duration: 1000,
     ease: 'Linear',
     onComplete: () => {

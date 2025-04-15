@@ -107,7 +107,7 @@ export class Level {
 
   createPipeAtGrid(gridX: number, heightInBlocks: number) {
     const x = gridX * this.blockSize;
-    const groundY = this.scene.scale.height - this.blockSize;
+    const groundY = this.scene.scale.height - (2 * this.blockSize); // Adjusted for double-height ground
 
     for (let i = 0; i < heightInBlocks; i++) {
       const y = groundY - i * this.blockSize;
@@ -139,33 +139,18 @@ export class Level {
 
   createPlatformRowAtGrid(startGridX: number, gridY: number, numBlocks: number, texture: string) {
     const startX = startGridX * this.blockSize;
-    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+    const y = this.scene.scale.height - ((gridY + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
     for (let i = 0; i < numBlocks; i++) {
       this.platforms.group
-        .create(startX + i * this.blockSize, y, texture)
+        .create(startX + i * this.blockSize, y, 'brick-block')
         .setOrigin(0, 0.5)
+        .setScale(2.0)  // Scale up from 16px to 32px
         .refreshBody();
     }
   }
 
   createQuestionBlocks() {
-    if (!this.scene.textures.exists('questionBlock')) {
-      const questionBlockGraphics = this.scene.add.graphics();
-      questionBlockGraphics.fillStyle(0xffd700, 1);
-      questionBlockGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-      questionBlockGraphics.generateTexture('questionBlock', this.blockSize, this.blockSize);
-      questionBlockGraphics.destroy();
-    }
-
-    if (!this.scene.textures.exists('usedBlock')) {
-      const usedBlockGraphics = this.scene.add.graphics();
-      usedBlockGraphics.fillStyle(0xa9a9a9, 1);
-      usedBlockGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-      usedBlockGraphics.generateTexture('usedBlock', this.blockSize, this.blockSize);
-      usedBlockGraphics.destroy();
-    }
-
-    // Use the questionBlocks array defined at the top
+    // Use the coin block sprites instead of generating graphics
     this.questionBlocks.forEach(([gridX, gridY, contains]) => {
       this.createQuestionBlock(gridX as number, gridY as number, contains as string);
     });
@@ -173,11 +158,12 @@ export class Level {
 
   createQuestionBlock(gridX: number, gridY: number, contains: string | number) {
     const x = gridX * this.blockSize;
-    const y = this.scene.scale.height - gridY * this.blockSize - this.blockSize / 2;
+    const y = this.scene.scale.height - ((gridY + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
 
     const questionBlock = this.platforms.group
-      .create(x, y, 'questionBlock')
+      .create(x, y, 'coin-block-active')
       .setOrigin(0, 0.5)
+      .setScale(2.0)  // Scale up the 16x16 sprite to 32x32
       .refreshBody();
 
     questionBlock.contains = contains;
@@ -187,7 +173,7 @@ export class Level {
   createGoombas() {
     this.goombaPositions.forEach((pos) => {
       const x = pos.gridX * this.blockSize;
-      const y = this.scene.scale.height - pos.gridY * this.blockSize;
+      const y = this.scene.scale.height - ((pos.gridY + 2) * this.blockSize); // Added +2 for double-height ground
 
       const goomba = new Goomba(this.scene, x, y, pos.direction);
       this.goombas.push(goomba);
@@ -214,7 +200,7 @@ export class Level {
 
     // Position the flag at the top of the pole
     const poleX = this.finishingPolePosition * this.blockSize;
-    const groundY = this.scene.scale.height - this.blockSize;
+    const groundY = this.scene.scale.height - (2 * this.blockSize); // Adjusted for double-height ground
     const poleHeight = this.blockSize * 8;
 
     // Create the pole (static, not collidable)
@@ -258,7 +244,7 @@ export class Level {
       for (let i = 0; i < numBlocks; i++) {
         for (let j = 0; j < heightBlocks; j++) {
           const x = (gridX + i) * this.blockSize;
-          const y = this.scene.scale.height - j * this.blockSize - this.blockSize / 2;
+          const y = this.scene.scale.height - ((j + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
 
           this.platforms.group
             .create(x, y, 'stairBlock')
