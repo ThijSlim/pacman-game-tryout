@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 export class GreenTurtle {
   scene: Phaser.Scene;
-  sprite: Phaser.Physics.Arcade.Sprite;
+  sprite: any;
   speed: number;
   direction: number;
   state: string;

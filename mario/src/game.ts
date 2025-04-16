@@ -59,6 +59,8 @@ function preload(this: Phaser.Scene) {
   this.load.image('pipe-small', 'public/pipes/pipe-small.png');
   this.load.image('pipe-medium', 'public/pipes/pipe-medium.png');
   this.load.image('pipe-large', 'public/pipes/pipe-large.png');
+  // Load the power-up sprite
+  this.load.spritesheet('power-up', 'public/power-ups/power-ups.png', { frameWidth: 16, frameHeight: 16 });
 }
 
 function create(this: Phaser.Scene) {
@@ -134,7 +136,7 @@ function create(this: Phaser.Scene) {
     
     // Green Turtle & Player collision - handled inside GreenTurtle class
     this.physics.add.collider(player.sprite, greenTurtle.sprite, (playerSprite, turtleSprite) => {
-      greenTurtle.handlePlayerCollision(playerSprite, player, () => {
+      greenTurtle.handlePlayerCollision(playerSprite as Phaser.Physics.Arcade.Sprite, player, () => {
         score += 100;
         scoreText.setText('Score: ' + score);
       }, endGame.bind(this));
@@ -186,13 +188,13 @@ function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
           .setScale(2.0); // Maintain scale when changing texture
 
       if (block.contains === 'coin') {
-        spawnCoin.call(this, block.x + block.width / 2, block.y - block.height);
+        spawnCoin.call(this, block.x + block.width, block.y - block.height);
         score += 10;
         scoreText.setText('Score: ' + score);
       } else if (block.contains === 'powerUp') {
         spawnPowerUp.call(
           this,
-          block.x + block.width / 2,
+          block.x + block.width,
           block.y - block.height
         );
       }
@@ -245,15 +247,9 @@ function breakBlock(this: Phaser.Scene, block: { x: any; y: any; destroy: () => 
 }
 
 function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
-  if (!this.textures.exists('powerUp')) {
-    const powerUpGraphics = this.add.graphics();
-    powerUpGraphics.fillStyle(0xff0000, 1);
-    powerUpGraphics.fillCircle(15, 15, 15);
-    powerUpGraphics.generateTexture('powerUp', 30, 30);
-    powerUpGraphics.destroy();
-  }
-
-  const powerUp = this.physics.add.sprite(x, y, 'powerUp');
+  // Create the power-up using the correct sprite from the sprite sheet
+  const powerUp = this.physics.add.sprite(x, y, 'power-up', 0); // Use frame 0 for now
+  powerUp.setScale(2.0);
   powerUp.setVelocityY(-100);
   powerUp.body.allowGravity = false;
 
