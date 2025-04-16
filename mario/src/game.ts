@@ -5,7 +5,7 @@ import { Level } from "./Level";
 const config = {
   type: Phaser.AUTO,
   width: 800, // Canvas width remains the same
-  height: 600,
+  height: 480,
   physics: {
     default: 'arcade',
     arcade: {
@@ -40,6 +40,11 @@ function preload(this: Phaser.Scene) {
   this.load.image('goomba-2', 'public/goomba/goomba-2.png');
   this.load.image('goomba-dead', 'public/goomba/goomba-dead.png');
   
+  // Load the green turtle sprites
+  this.load.image('greenTurtle', 'public/green-turtle/green-turtle-default.png');
+  this.load.image('greenShell', 'public/green-turtle/green-turtle-shell.png');
+  this.load.image('greenTurtleWalking', 'public/green-turtle/green-turtle-walking.png');
+  
   // Load the coin block sprites
   this.load.image('coin-block-active', 'public/blocks/coin-block-active.png');
   this.load.image('coin-block-deactive', 'public/blocks/coin-block-deactive.png');
@@ -61,14 +66,14 @@ function create(this: Phaser.Scene) {
 
   const background = this.add.graphics();
   background.fillStyle(0x4b7ffc, 1); 
-  background.fillRect(0, 0, worldWidth, 600);
+  background.fillRect(0, 0, worldWidth, config.height);
   background.setDepth(-2); // Set background depth to -1 to render behind other objects
 
 
   // Create multiple static background images across the entire world
   // This approach uses individual images instead of a scrolling tileSprite
-  const bgHeight = config.height;
-  const bgWidth = 1500;
+  const bgHeight = config.height - 64; // Adjusted height to account for the bottom offset
+  const bgWidth = 1520;
   const numBackgrounds = Math.ceil(worldWidth / bgWidth);
   
   // Create multiple background images placed side by side
@@ -76,7 +81,7 @@ function create(this: Phaser.Scene) {
   for (let i = 0; i < numBackgrounds; i++) {
     this.add.image(i * bgWidth, 0, 'background')
       .setOrigin(0, 0)
-      .setDisplaySize(bgWidth, bgHeight - 64) // Reduce height to account for bottom offset
+      .setDisplaySize(bgWidth, bgHeight) // Reduce height to account for bottom offset
       .setDepth(-1)
       .setScrollFactor(1); // Makes it static relative to the world (not the camera)
   }
@@ -87,7 +92,7 @@ function create(this: Phaser.Scene) {
   });
   scoreText.setScrollFactor(0);
 
-  this.physics.world.setBounds(0, 0, worldWidth, 600);
+  this.physics.world.setBounds(0, 0, worldWidth, config.height);
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
@@ -121,8 +126,34 @@ function create(this: Phaser.Scene) {
       }
     });
   });
+  
+  // Setup Green Turtle collisions
+  level.greenTurtles.forEach((greenTurtle) => {
+    // Green Turtles collide with platforms
+    this.physics.add.collider(greenTurtle.sprite, level.platforms.group);
+    
+    // Green Turtle & Player collision - handled inside GreenTurtle class
+    this.physics.add.collider(player.sprite, greenTurtle.sprite, (playerSprite, turtleSprite) => {
+      greenTurtle.handlePlayerCollision(playerSprite, player, () => {
+        score += 100;
+        scoreText.setText('Score: ' + score);
+      }, endGame.bind(this));
+    }, undefined, this);
+    
+    // Green Turtles collide with Goombas
+    level.goombas.forEach((goomba) => {
+      this.physics.add.collider(greenTurtle.sprite, goomba.sprite);
+    });
+    
+    // Green Turtles collide with each other
+    level.greenTurtles.forEach((otherTurtle) => {
+      if (otherTurtle !== greenTurtle) {
+        this.physics.add.collider(greenTurtle.sprite, otherTurtle.sprite);
+      }
+    });
+  });
 
-  this.cameras.main.setBounds(0, 0, worldWidth, 600);
+  this.cameras.main.setBounds(0, 0, worldWidth, config.height);
   this.cameras.main.startFollow(player.sprite);
 
   cursors = this.input.keyboard?.createCursorKeys();
@@ -135,6 +166,9 @@ function update(this: Phaser.Scene) {
 
   // Update all goombas
   level.goombas.forEach((goomba) => goomba.update());
+  
+  // Update all green turtles
+  level.greenTurtles.forEach((greenTurtle) => greenTurtle.update());
 
   // Check if Mario falls into a hole (off the screen bottom)
   if (player.sprite.y > this.scale.height) {

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { Goomba } from "./Goomba";
+import { GreenTurtle } from "./GreenTurtle";
 import { Platforms } from "./Platforms";
 
 // The new Level class
@@ -12,9 +13,11 @@ export class Level {
   stairBlocks: number[][];
   questionBlocks: (string | number)[][];
   goombaPositions: { gridX: number; gridY: number; direction: number; }[];
+  greenTurtlePositions: { gridX: number; gridY: number; direction: number; }[];
   finishingPolePosition: number;
   platforms: Platforms;
   goombas: Goomba[];
+  greenTurtles: GreenTurtle[];
   pole: any;
   flag: any;
   castle: any;
@@ -38,9 +41,9 @@ export class Level {
 
     // Platform rows: startGridX, gridY, numBlocks, texture
     this.platformRows = [
-      [19, 4, 1, 'platformBlock'],
-      [21, 4, 1, 'platformBlock'],
-      [23, 4, 1, 'platformBlock'],
+      [19, 3, 1, 'platformBlock'],
+      [21, 3, 1, 'platformBlock'],
+      [23, 3, 1, 'platformBlock'],
     ];
 
     // Stairs configuration near the finishing pole - extended for longer runway
@@ -57,10 +60,10 @@ export class Level {
 
     // Question blocks: gridX, gridY, contains
     this.questionBlocks = [
-      [16, 4, 'coin'],
-      [20, 4, 'coin'],
-      [22, 4, 'coin'],
-      [21, 8, 'powerUp'],
+      [16, 3, 'coin'],
+      [20, 3, 'coin'],
+      [22, 3, 'coin'],
+      [21, 7, 'powerUp'],
     ];
 
     // Goomba positions: {gridX, gridY, direction}
@@ -69,6 +72,12 @@ export class Level {
       { gridX: 42, gridY: 4, direction: -1 },
       { gridX: 52, gridY: 4, direction: 1 },
       { gridX: 53, gridY: 4, direction: -1 },
+    ];
+
+    // Green Turtle positions: {gridX, gridY, direction}
+    this.greenTurtlePositions = [
+      { gridX: 10, gridY: 5, direction: 1 },
+      { gridX: 48, gridY: 4, direction: -1 },
     ];
 
     // Finishing pole position (near end of level)
@@ -88,6 +97,10 @@ export class Level {
     // Add Goombas
     this.goombas = [];
     this.createGoombas();
+    
+    // Add Green Turtles
+    this.greenTurtles = [];
+    this.createGreenTurtles();
   }
 
   createGreenPipes() {
@@ -190,6 +203,16 @@ export class Level {
 
       const goomba = new Goomba(this.scene, x, y, pos.direction);
       this.goombas.push(goomba);
+    });
+  }
+  
+  createGreenTurtles() {
+    this.greenTurtlePositions.forEach((pos) => {
+      const x = pos.gridX * this.blockSize;
+      const y = this.scene.scale.height - ((pos.gridY + 2) * this.blockSize); // Adjusted for double-height ground
+      
+      const greenTurtle = new GreenTurtle(this.scene, x, y, pos.direction);
+      this.greenTurtles.push(greenTurtle);
     });
   }
 
