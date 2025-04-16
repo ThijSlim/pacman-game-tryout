@@ -54,6 +54,22 @@ export class Goomba {
   }
 
   handlePlayerCollision(playerSprite: any, playerObj: Mario, onStompedCallback: { (): void; (): void; }, onGameOverCallback: { (): void; (): void; }) {
+    // If Mario is invincible (star active), defeat Goomba instantly from any direction
+    if (playerObj.isInvincible) {
+      this.isDead = true;
+      this.sprite.setTexture('goomba-dead');
+      this.sprite.setVelocityX(0);
+      this.sprite.body.setSize(this.sprite.width * 0.8, this.sprite.height * 0.5);
+      this.sprite.body.setOffset(this.sprite.width * 0.1, this.sprite.height * 0.5);
+      if (onStompedCallback) onStompedCallback();
+      this.scene.time.delayedCall(100, () => {
+        if (this.sprite && this.sprite.body) {
+          this.sprite.destroy();
+        }
+      });
+      return;
+    }
+
     // If player hits Goomba from above
     if (playerSprite.body.touching.down && this.sprite.body.touching.up) {
       // Goomba defeated - show dead sprite

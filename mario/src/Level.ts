@@ -76,6 +76,11 @@ export class Level {
       [79, 3, 'powerUp'],
       [89, 7, 'coin'],
       [96, 3, 'star'],
+      [101, 3, 'coin'],
+      [104, 3, 'coin'],
+      [107, 3, 'coin'],
+      [104, 7, 'powerUp'],
+
     ];
 
     // Goomba positions: {gridX, gridY, direction}
@@ -91,6 +96,7 @@ export class Level {
     this.greenTurtlePositions = [
       { gridX: 10, gridY: 5, direction: 1 },
       { gridX: 48, gridY: 4, direction: -1 },
+      { gridX: 105, gridY: 4, direction: 1 },
     ];
 
     // Finishing pole position (near end of level)

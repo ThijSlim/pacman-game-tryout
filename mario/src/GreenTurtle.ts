@@ -72,6 +72,26 @@ export class GreenTurtle {
   handlePlayerCollision(playerSprite: Phaser.Physics.Arcade.Sprite, playerObj: any, onStompedCallback: Function, onGameOverCallback: Function) {
     if (!playerSprite.body || !this.sprite.body) return;
 
+    // If Mario is invincible (star active), destroy turtle instantly from any direction
+    if (playerObj.isInvincible) {
+      this.state = 'destroyed';
+      this.sprite.setCollideWorldBounds(false);
+      this.sprite.setVelocityY(300);
+      this.sprite.setAngularVelocity(300);
+      this.sprite.setBounce(0.5);
+      this.scene.tweens.add({
+        targets: this.sprite,
+        alpha: 0,
+        duration: 800,
+        ease: 'Power2',
+        onComplete: () => {
+          this.sprite.destroy();
+        }
+      });
+      if (onStompedCallback) onStompedCallback();
+      return;
+    }
+
     // If the turtle is normal
     if (this.state === 'normal') {
       // If player hits Turtle from above
