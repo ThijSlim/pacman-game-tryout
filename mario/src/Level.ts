@@ -64,6 +64,11 @@ export class Level {
       [84, 7, 3, 'platformBlock'],
       [89, 3, 1, 'platformBlock'],
       [95, 3, 1, 'platformBlock'],
+      [111, 3, 1, 'platformBlock'],
+      [114, 7, 3, 'platformBlock'],
+      [121, 7, 1, 'platformBlock'],
+      [122, 3, 2, 'platformBlock'],
+      [124, 7, 1, 'platformBlock'],
     ];
 
 
@@ -78,8 +83,10 @@ export class Level {
       [96, 3, 'star'],
       [101, 3, 'coin'],
       [104, 3, 'coin'],
-      [107, 3, 'coin'],
       [104, 7, 'powerUp'],
+      [107, 3, 'coin'],
+      [122, 7, 'coin'],
+      [123, 7, 'coin'],
 
     ];
 
