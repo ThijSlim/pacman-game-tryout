@@ -6,6 +6,8 @@ export class Mario {
   moveSpeed: number;
   isRunning: boolean;
   isJumping: boolean;
+  isInvincible: boolean = false;
+  invincibilityTimer: any = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
       this.scene = scene;
@@ -107,5 +109,36 @@ export class Mario {
   collectPowerUp(scaleFactor: number, speedFactor: number) {
     this.sprite.setScale(2.0 * scaleFactor); // Adjust based on new base scale of 1.0
     this.moveSpeed *= speedFactor;
+  }
+
+  startInvincibility(duration: number = 10000) {
+    if (this.isInvincible && this.invincibilityTimer) {
+      clearTimeout(this.invincibilityTimer);
+    }
+    this.isInvincible = true;
+    // Start blinking effect
+    this.scene.tweens.add({
+      targets: this.sprite,
+      alpha: 0.3,
+      yoyo: true,
+      repeat: -1,
+      duration: 100
+    });
+    // Set timer to end invincibility
+    this.invincibilityTimer = setTimeout(() => {
+      this.isInvincible = false;
+      this.scene.tweens.killTweensOf(this.sprite);
+      this.sprite.alpha = 1;
+    }, duration);
+  }
+
+  // Example: call this in your enemy collision logic
+  handleEnemyCollision(enemy: any) {
+    if (this.isInvincible) {
+      // Defeat enemy instantly
+      enemy.defeat();
+    } else {
+      // ...existing damage logic...
+    }
   }
 }

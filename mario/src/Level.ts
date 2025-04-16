@@ -27,16 +27,30 @@ export class Level {
 
     // All grid-based configuration
     this.holes = [
-      [60, 65], // First hole
+      [70, 72], // First hole
       // Removed the hole at [70, 75] which was under the flag
     ];
 
     // Pipe positions: [gridX, heightInBlocks]
     this.pipePositions = [
-      [30, 2],
-      [39, 3],
+      [28, 2],
+      [38, 3],
       [46, 4],
-      [56, 4],
+      [57, 4],
+    ];
+
+
+    // Stairs configuration near the finishing pole - extended for longer runway
+    this.stairBlocks = [
+      // New stairs at the end of the level
+      [135, 1, 4], // First stairs at the end of level
+      [136, 2, 3],
+      [137, 3, 2],
+      [138, 4, 1],
+      [140, 1, 4], // Final stairs before flag
+      [141, 2, 3],
+      [142, 3, 2],
+      [143, 4, 1],
     ];
 
     // Platform rows: startGridX, gridY, numBlocks, texture
@@ -44,19 +58,14 @@ export class Level {
       [19, 3, 1, 'platformBlock'],
       [21, 3, 1, 'platformBlock'],
       [23, 3, 1, 'platformBlock'],
+      [78, 3, 1, 'platformBlock'],
+      [80, 3, 1, 'platformBlock'],
+      [81, 7, 8, 'platformBlock'],
+      [84, 7, 3, 'platformBlock'],
+      [89, 3, 1, 'platformBlock'],
+      [95, 3, 1, 'platformBlock'],
     ];
 
-    // Stairs configuration near the finishing pole - extended for longer runway
-    this.stairBlocks = [
-      [62, 1, 4], // [startGridX, heightBlocks, numBlocks] - first stair (moved earlier)
-      [63, 2, 3], // second stair (moved earlier)
-      [64, 3, 2], // third stair (moved earlier)
-      [65, 4, 1], // fourth stair (moved earlier)
-      [67, 1, 4], // Additional stairs for longer runway
-      [68, 2, 3],
-      [69, 3, 2],
-      [70, 4, 1],
-    ];
 
     // Question blocks: gridX, gridY, contains
     this.questionBlocks = [
@@ -64,6 +73,9 @@ export class Level {
       [20, 3, 'coin'],
       [22, 3, 'coin'],
       [21, 7, 'powerUp'],
+      [79, 3, 'powerUp'],
+      [89, 7, 'coin'],
+      [96, 3, 'star'],
     ];
 
     // Goomba positions: {gridX, gridY, direction}
@@ -72,6 +84,7 @@ export class Level {
       { gridX: 42, gridY: 4, direction: -1 },
       { gridX: 52, gridY: 4, direction: 1 },
       { gridX: 53, gridY: 4, direction: -1 },
+      { gridX: 100, gridY: 4, direction: 1 },
     ];
 
     // Green Turtle positions: {gridX, gridY, direction}
@@ -81,7 +94,7 @@ export class Level {
     ];
 
     // Finishing pole position (near end of level)
-    this.finishingPolePosition = 72;
+    this.finishingPolePosition = 145; // Moved to the end of the level
 
     // Create all platforms and environment
     this.platforms = new Platforms(this.scene, worldWidth, this.blockSize, this.holes);
@@ -97,7 +110,7 @@ export class Level {
     // Add Goombas
     this.goombas = [];
     this.createGoombas();
-    
+
     // Add Green Turtles
     this.greenTurtles = [];
     this.createGreenTurtles();
@@ -184,16 +197,23 @@ export class Level {
 
   createQuestionBlock(gridX: number, gridY: number, contains: string | number) {
     const x = gridX * this.blockSize;
-    const y = this.scene.scale.height - ((gridY + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
+    const y = this.scene.scale.height - ((gridY + 2) * this.blockSize) - this.blockSize / 2;
 
     const questionBlock = this.platforms.group
       .create(x, y, 'coin-block-active')
       .setOrigin(0, 0.5)
-      .setScale(2.0)  // Scale up the 16x16 sprite to 32x32
+      .setScale(2.0)
       .refreshBody();
 
     questionBlock.contains = contains;
     questionBlock.activated = false;
+
+    // Add support for star power-up
+    questionBlock.onHit = () => {
+      if (questionBlock.activated) return;
+      questionBlock.activated = true;
+      questionBlock.setTexture('coin-block-deactive');
+    };
   }
 
   createGoombas() {
@@ -205,12 +225,12 @@ export class Level {
       this.goombas.push(goomba);
     });
   }
-  
+
   createGreenTurtles() {
     this.greenTurtlePositions.forEach((pos) => {
       const x = pos.gridX * this.blockSize;
       const y = this.scene.scale.height - ((pos.gridY + 2) * this.blockSize); // Adjusted for double-height ground
-      
+
       const greenTurtle = new GreenTurtle(this.scene, x, y, pos.direction);
       this.greenTurtles.push(greenTurtle);
     });

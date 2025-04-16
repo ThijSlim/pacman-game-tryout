@@ -62,10 +62,11 @@ function preload(this: Phaser.Scene) {
   // Load the power-up sprite
   this.load.spritesheet('power-up', 'public/items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
   this.load.image('coin', 'public/items/coin.png');
+  this.load.image('star', 'public/items/star.png');
 }
 
 function create(this: Phaser.Scene) {
-  const worldWidth = 2400; // 3 times the original width
+  const worldWidth = 5000; // 3 times the original width
 
   const background = this.add.graphics();
   background.fillStyle(0x4b7ffc, 1); 
@@ -76,7 +77,7 @@ function create(this: Phaser.Scene) {
   // Create multiple static background images across the entire world
   // This approach uses individual images instead of a scrolling tileSprite
   const bgHeight = config.height - 64; // Adjusted height to account for the bottom offset
-  const bgWidth = 1520;
+  const bgWidth = 1515;
   const numBackgrounds = Math.ceil(worldWidth / bgWidth);
   
   // Create multiple background images placed side by side
@@ -99,7 +100,7 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 100, 450 - 32); // Adjusted spawn height for double-height ground
+  player = new Mario(this, 3000, 450 - 32); // Adjusted spawn height for double-height ground
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);
@@ -198,6 +199,12 @@ function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
           block.x + block.width,
           block.y - block.height
         );
+      } else if (block.contains === 'star') {
+        spawnStar.call(
+          this,
+          block.x + block.width,
+          block.y - block.height
+        );
       }
     } else if (block.texture.key === 'coin-block-deactive') {
       // No action for already hit blocks
@@ -277,6 +284,22 @@ function spawnCoin(this: Phaser.Scene, x: number, y: number) {
       coin.destroy();
     },
   });
+}
+
+function spawnStar(this: Phaser.Scene, x: number, y: number) {
+  const star = this.physics.add.sprite(x, y, 'star').setScale(2.0);
+  star.setBounce(0.8);
+  star.setVelocityY(-200);
+  star.setVelocityX(Phaser.Math.Between(-100, 100));
+  star.body.allowGravity = true;
+
+  this.physics.add.collider(star, level.platforms.group);
+  this.physics.add.overlap(player.sprite, star, collectStar, undefined, this);
+}
+
+function collectStar(this: Phaser.Scene, playerSprite: any, star: { destroy: () => void; }) {
+  star.destroy();
+  player.startInvincibility();
 }
 
 function collectPowerUp(this: Phaser.Scene, playerSprite: any, powerUp: { destroy: () => void; }) {
