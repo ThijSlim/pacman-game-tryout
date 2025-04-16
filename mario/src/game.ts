@@ -60,7 +60,8 @@ function preload(this: Phaser.Scene) {
   this.load.image('pipe-medium', 'public/pipes/pipe-medium.png');
   this.load.image('pipe-large', 'public/pipes/pipe-large.png');
   // Load the power-up sprite
-  this.load.spritesheet('power-up', 'public/power-ups/power-ups.png', { frameWidth: 16, frameHeight: 16 });
+  this.load.spritesheet('power-up', 'public/items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
+  this.load.image('coin', 'public/items/coin.png');
 }
 
 function create(this: Phaser.Scene) {
@@ -263,15 +264,7 @@ function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
 }
 
 function spawnCoin(this: Phaser.Scene, x: number, y: number) {
-  if (!this.textures.exists('coin')) {
-    const coinGraphics = this.add.graphics();
-    coinGraphics.fillStyle(0xffff00, 1);
-    coinGraphics.fillCircle(15, 15, 15);
-    coinGraphics.generateTexture('coin', 30, 30);
-    coinGraphics.destroy();
-  }
-
-  const coin = this.physics.add.sprite(x, y, 'coin');
+  const coin = this.physics.add.sprite(x, y, 'coin').setScale(2.0);
   coin.body.allowGravity = false;
 
   this.tweens.add({
