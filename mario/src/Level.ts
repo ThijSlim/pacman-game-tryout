@@ -288,7 +288,7 @@ export class Level {
   // New method to check if enemies should spawn based on Mario's proximity
   checkEnemySpawning(playerX: number) {
     const spawnDistance = 800; // Distance in pixels to trigger enemy spawning
-    const newEnemies = { goombas: [], greenTurtles: [] };
+    const newEnemies = { goombas: [], greenTurtles: [] } as any
 
     // Check for goombas that need to be spawned
     this.goombaPositions = this.goombaPositions.filter((pos) => {
