@@ -31,38 +31,39 @@ let level: Level;
 const game = new Phaser.Game(config as any);
 
 function preload(this: Phaser.Scene) {
-  this.load.image('mario-default', 'public/mario/mario-default.png');
-  this.load.image('mario-running', 'public/mario/mario-running.png');
-  this.load.image('mario-jumping', 'public/mario/mario-jumping.png');
+  this.load.image('mario-default', 'mario/mario-default.png');
+  this.load.image('mario-running', 'mario/mario-running.png');
+  this.load.image('mario-jumping', 'mario/mario-jumping.png');
   
   // Load the goomba sprites
-  this.load.image('goomba-1', 'public/goomba/goomba-1.png');
-  this.load.image('goomba-2', 'public/goomba/goomba-2.png');
-  this.load.image('goomba-dead', 'public/goomba/goomba-dead.png');
+  this.load.image('goomba-1', 'goomba/goomba-1.png');
+  this.load.image('goomba-2', 'goomba/goomba-2.png');
+  this.load.image('goomba-dead', 'goomba/goomba-dead.png');
   
   // Load the green turtle sprites
-  this.load.image('greenTurtle', 'public/green-turtle/green-turtle-default.png');
-  this.load.image('greenShell', 'public/green-turtle/green-turtle-shell.png');
-  this.load.image('greenTurtleWalking', 'public/green-turtle/green-turtle-walking.png');
+  this.load.image('greenTurtle', 'green-turtle/green-turtle-default.png');
+  this.load.image('greenShell', 'green-turtle/green-turtle-shell.png');
+  this.load.image('greenTurtleWalking', 'green-turtle/green-turtle-walking.png');
+  this.load.image('hammer', 'green-turtle/hammer.png');
   
   // Load the coin block sprites
-  this.load.image('coin-block-active', 'public/blocks/coin-block-active.png');
-  this.load.image('coin-block-deactive', 'public/blocks/coin-block-deactive.png');
+  this.load.image('coin-block-active', 'blocks/coin-block-active.png');
+  this.load.image('coin-block-deactive', 'blocks/coin-block-deactive.png');
   // Load the ground block sprite
-  this.load.image('ground-block', 'public/blocks/ground-block.png');
+  this.load.image('ground-block', 'blocks/ground-block.png');
   // Load the brick block sprite
-  this.load.image('brick-block', 'public/blocks/brick-block.png');
+  this.load.image('brick-block', 'blocks/brick-block.png');
   // Load the background image
-  this.load.image('background', 'public/background/repeated-background.png');
+  this.load.image('background', 'background/repeated-background.png');
   
   // Load the pipe sprites
-  this.load.image('pipe-small', 'public/pipes/pipe-small.png');
-  this.load.image('pipe-medium', 'public/pipes/pipe-medium.png');
-  this.load.image('pipe-large', 'public/pipes/pipe-large.png');
+  this.load.image('pipe-small', 'pipes/pipe-small.png');
+  this.load.image('pipe-medium', 'pipes/pipe-medium.png');
+  this.load.image('pipe-large', 'pipes/pipe-large.png');
   // Load the power-up sprite
-  this.load.spritesheet('power-up', 'public/items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
-  this.load.image('coin', 'public/items/coin.png');
-  this.load.image('star', 'public/items/star.png');
+  this.load.spritesheet('power-up', 'items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
+  this.load.image('coin', 'items/coin.png');
+  this.load.image('star', 'items/star.png');
 }
 
 function create(this: Phaser.Scene) {
