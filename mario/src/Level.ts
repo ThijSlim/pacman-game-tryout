@@ -324,8 +324,9 @@ export class Level {
     this.flag.body.allowGravity = false;
     this.flag.isFlag = true; // Mark this object as a flag for collision handling
     
-    // Make the flag collision area taller to allow grabbing it from the middle
-    this.flag.body.setSize(32, poleHeight); // Set collision height to full pole height
+    // Make the flag collision area more balanced - large enough to detect collision but not too large
+    this.flag.body.setSize(4, 100); // Adjusted size for reliable collision detection
+    this.flag.body.setOffset(12, 0); // Offset to better align with the flag graphic
 
 
     // Create a small castle at the end

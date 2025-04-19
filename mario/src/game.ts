@@ -351,30 +351,52 @@ function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
 
   // Store blockSize for proper positioning
   const blockSize = level.blockSize;
+  
+  // Get the pole's physical properties
+  const poleX = level.pole.x;
+  const groundY = this.scale.height - (2 * blockSize); // Adjusted for double-height ground
+  const finalY = groundY - blockSize; // Final position at the bottom of the pole
 
+  // Disable physics temporarily to avoid interference with the animation
+  playerSprite.body.allowGravity = false;
+  playerSprite.body.velocity.set(0, 0);
+  
   // Ensure Mario is aligned with the pole
-  playerSprite.x = level.pole.x;
-
-  // Stop player horizontal movement
-  playerSprite.setVelocityX(0);
-
-  // Animate the flag going down
+  playerSprite.x = poleX;
+  
+  // Play a static sprite for sliding down - prevents animation flickering
+  playerSprite.anims.stop();
+  playerSprite.setTexture('mario-default');
+  
+  // Calculate the slide duration based on distance (longer pole = longer slide time)
+  const slideDistance = finalY - playerSprite.y;
+  const slideDuration = Math.max(1500, slideDistance * 4); // At least 1.5 seconds, scales with height
+  
+  // Animate the flag going down with a smoother ease function
   this.tweens.add({
     targets: flag,
-    y: this.scale.height - blockSize * 3, // Adjusted for double-height ground
-    duration: 1000,
-    ease: 'Linear',
+    y: finalY, 
+    duration: slideDuration,
+    ease: 'Sine.easeIn', // Smoother acceleration
   });
 
-  // Animate Mario sliding down the pole
+  // Animate Mario sliding down the pole with improved physics
   this.tweens.add({
     targets: playerSprite,
-    y: this.scale.height - blockSize * 3, // Adjusted for double-height ground
-    duration: 1000,
-    ease: 'Linear',
+    y: finalY,
+    duration: slideDuration,
+    ease: 'Sine.easeIn', // Smoother acceleration
+    onUpdate: () => {
+      // Keep Mario aligned with the pole during the slide
+      playerSprite.x = poleX;
+    },
     onComplete: () => {
+      // Re-enable physics for Mario before walking to castle
+      playerSprite.body.allowGravity = true;
+      
       // Make Mario move automatically to the castle
       playerSprite.setVelocityX(100);
+      playerSprite.anims.play('running', true);
 
       // Once Mario reaches the castle, show level complete message
       this.time.delayedCall(1500, () => {
