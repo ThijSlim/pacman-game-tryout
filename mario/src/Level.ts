@@ -329,20 +329,16 @@ export class Level {
     this.flag.body.setOffset(12, 0); // Offset to better align with the flag graphic
 
 
-    // Create a small castle at the end
-    if (!this.scene.textures.exists('castleTexture')) {
-      const castleGraphics = this.scene.add.graphics();
-      castleGraphics.fillStyle(0xA52A2A, 1); // Brown castle
-      castleGraphics.fillRect(0, 0, this.blockSize * 3, this.blockSize * 3);
-      // Add a small door
-      castleGraphics.fillStyle(0x000000, 1);
-      castleGraphics.fillRect(this.blockSize, this.blockSize * 1.5, this.blockSize, this.blockSize * 1.5);
-      castleGraphics.generateTexture('castleTexture', this.blockSize * 3, this.blockSize * 3);
-      castleGraphics.destroy();
-    }
-
-    // Add the castle just after the pole
-    this.castle = this.scene.add.sprite(poleX + (this.blockSize * 4), groundY - (this.blockSize * 1.5), 'castleTexture');
+    // Add the castle after the pole using the castle sprite
+    // Castle is 80x80 pixels, with scale 2.0 it becomes 160x160 pixels
+    // Position it so that it sits perfectly on the ground level
+    this.castle = this.scene.add.sprite(
+      poleX + (this.blockSize * 7), 
+      groundY, 
+      'castle'
+    )
+    .setScale(2.0)    // Scale to match the game's pixel art style
+    .setOrigin(0.5, 1); // Set origin to bottom center so it sits perfectly on ground
   }
 
   createStairs() {

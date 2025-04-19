@@ -66,6 +66,9 @@ function preload(this: Phaser.Scene) {
   this.load.image('pipe-small', 'pipes/pipe-small.png');
   this.load.image('pipe-medium', 'pipes/pipe-medium.png');
   this.load.image('pipe-large', 'pipes/pipe-large.png');
+  
+  // Load the castle sprite
+  this.load.image('castle', 'background/castle.png');
   // Load the power-up sprite
   this.load.spritesheet('power-up', 'items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
   this.load.image('coin', 'items/coin.png');
