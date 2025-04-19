@@ -402,7 +402,7 @@ function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
       playerSprite.anims.play('running', true);
 
       // Once Mario reaches the castle, show level complete message
-      this.time.delayedCall(1500, () => {
+      this.time.delayedCall(2100, () => {
         // Stop all movement
         this.physics.pause();
 
