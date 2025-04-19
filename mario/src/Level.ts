@@ -28,6 +28,8 @@ export class Level {
     // All grid-based configuration
     this.holes = [
       [70, 72], // First hole
+      [147, 149], // Second hole
+
       // Removed the hole at [70, 75] which was under the flag
     ];
 
@@ -37,21 +39,44 @@ export class Level {
       [38, 3],
       [46, 4],
       [57, 4],
+      [157, 2],
+      [174, 2],
     ];
 
 
     // Stairs configuration near the finishing pole - extended for longer runway
     this.stairBlocks = [
-      // New stairs at the end of the level
-      // Single 8-block high stairs
-      [135, 1, 8], // 8-block high staircase (each row adds one block in height)
-      [136, 2, 7],
-      [137, 3, 6],
-      [138, 4, 5],
-      [139, 5, 4],
-      [140, 6, 3],
-      [141, 7, 2],
-      [142, 8, 1],
+      [128, 1],
+      [129, 2],
+      [130, 3],
+      [131, 4],
+      // one ersed
+      [134, 4],
+      [135, 3],
+      [136, 2],
+      [137, 1],
+
+      [142, 1],
+      [143, 2],
+      [144, 3],
+      [145, 4],
+      [146, 4],
+
+      // reversed
+      [149, 4],
+      [150, 3],
+      [151, 2],
+      [152, 1],
+
+      [177, 1],
+      [178, 2],
+      [179, 3],
+      [180, 4],
+      [181, 5],
+      [182, 6],
+      [183, 7],
+      [184, 8],
+      [185, 8],
     ];
 
     // Platform rows: startGridX, gridY, numBlocks, texture
@@ -98,6 +123,8 @@ export class Level {
       { gridX: 52, gridY: 4, direction: 1 },
       { gridX: 53, gridY: 4, direction: -1 },
       { gridX: 100, gridY: 4, direction: 1 },
+      { gridX: 166, gridY: 4, direction: -1 },
+      { gridX: 167, gridY: 4, direction: 1 },
     ];
 
     // Green Turtle positions: {gridX, gridY, direction}
@@ -108,7 +135,7 @@ export class Level {
     ];
 
     // Finishing pole position (near end of level)
-    this.finishingPolePosition = 145; // Moved to the end of the level
+    this.finishingPolePosition = 194; // Moved to the end of the level
 
     // Create all platforms and environment
     this.platforms = new Platforms(this.scene, worldWidth, this.blockSize, this.holes);
@@ -300,18 +327,16 @@ export class Level {
 
   createStairs() {
     // Create each stair section based on stairBlocks configuration
-    this.stairBlocks.forEach(([gridX, heightBlocks, numBlocks]) => {
-      for (let i = 0; i < numBlocks; i++) {
-        for (let j = 0; j < heightBlocks; j++) {
-          const x = (gridX + i) * this.blockSize;
-          const y = this.scene.scale.height - ((j + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
+    this.stairBlocks.forEach(([gridX, heightBlocks]) => {
+      for (let j = 0; j < heightBlocks; j++) {
+        const x = (gridX) * this.blockSize;
+        const y = this.scene.scale.height - ((j + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
 
-          this.platforms.group
-            .create(x, y, 'stairs-block')
-            .setOrigin(0, 0.5)
-            .setScale(2.0)  // Scale up from 16px to 32px
-            .refreshBody();
-        }
+        this.platforms.group
+          .create(x, y, 'stairs-block')
+          .setOrigin(0, 0.5)
+          .setScale(2.0)  // Scale up from 16px to 32px
+          .refreshBody();
       }
     });
   }
