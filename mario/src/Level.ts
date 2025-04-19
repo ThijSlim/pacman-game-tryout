@@ -43,14 +43,15 @@ export class Level {
     // Stairs configuration near the finishing pole - extended for longer runway
     this.stairBlocks = [
       // New stairs at the end of the level
-      [135, 1, 4], // First stairs at the end of level
-      [136, 2, 3],
-      [137, 3, 2],
-      [138, 4, 1],
-      [140, 1, 4], // Final stairs before flag
-      [141, 2, 3],
-      [142, 3, 2],
-      [143, 4, 1],
+      // Single 8-block high stairs
+      [135, 1, 8], // 8-block high staircase (each row adds one block in height)
+      [136, 2, 7],
+      [137, 3, 6],
+      [138, 4, 5],
+      [139, 5, 4],
+      [140, 6, 3],
+      [141, 7, 2],
+      [142, 8, 1],
     ];
 
     // Platform rows: startGridX, gridY, numBlocks, texture
@@ -298,16 +299,6 @@ export class Level {
   }
 
   createStairs() {
-    if (!this.scene.textures.exists('stairBlock')) {
-      const stairGraphics = this.scene.add.graphics();
-      stairGraphics.fillStyle(0x8b4513, 1); // Brown color for stairs
-      stairGraphics.fillRect(0, 0, this.blockSize, this.blockSize);
-      stairGraphics.lineStyle(2, 0x5c2d11); // Darker outline
-      stairGraphics.strokeRect(0, 0, this.blockSize, this.blockSize);
-      stairGraphics.generateTexture('stairBlock', this.blockSize, this.blockSize);
-      stairGraphics.destroy();
-    }
-
     // Create each stair section based on stairBlocks configuration
     this.stairBlocks.forEach(([gridX, heightBlocks, numBlocks]) => {
       for (let i = 0; i < numBlocks; i++) {
@@ -316,8 +307,9 @@ export class Level {
           const y = this.scene.scale.height - ((j + 2) * this.blockSize) - this.blockSize / 2; // Added +2 for double-height ground
 
           this.platforms.group
-            .create(x, y, 'stairBlock')
+            .create(x, y, 'stairs-block')
             .setOrigin(0, 0.5)
+            .setScale(2.0)  // Scale up from 16px to 32px
             .refreshBody();
         }
       }

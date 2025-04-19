@@ -5,7 +5,7 @@ import { Level } from "./Level";
 const config = {
   type: Phaser.AUTO,
   width: 800, // Canvas width remains the same
-  height: 480,
+  height: 15 * 32,
   physics: {
     default: 'arcade',
     arcade: {
@@ -53,6 +53,8 @@ function preload(this: Phaser.Scene) {
   this.load.image('ground-block', 'blocks/ground-block.png');
   // Load the brick block sprite
   this.load.image('brick-block', 'blocks/brick-block.png');
+  // Load the stairs block sprite
+  this.load.image('stairs-block', 'blocks/stairs-block.png');
   // Load the background image
   this.load.image('background', 'background/repeated-background.png');
   
@@ -77,7 +79,10 @@ function create(this: Phaser.Scene) {
 
   // Create multiple static background images across the entire world
   // This approach uses individual images instead of a scrolling tileSprite
-  const bgHeight = config.height - 64; // Adjusted height to account for the bottom offset
+  const bgHeight = config.height - 64; // Adjusted height to account
+
+
+  //  for the bottom offset
   const bgWidth = 1515;
   const numBackgrounds = Math.ceil(worldWidth / bgWidth);
   
