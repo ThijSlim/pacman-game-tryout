@@ -127,7 +127,16 @@ export class Level {
       { gridX: 42, gridY: 4, direction: -1 },
       { gridX: 52, gridY: 4, direction: 1 },
       { gridX: 53, gridY: 4, direction: -1 },
-      { gridX: 100, gridY: 4, direction: 1 },
+      { gridX: 83, gridY: 12, direction: -1 },
+      { gridX: 85, gridY: 12, direction: -1 },
+      { gridX: 92, gridY: 4, direction: -1 },
+      { gridX: 94, gridY: 4, direction: -1 },
+      { gridX: 108, gridY: 4, direction: -1 },
+      { gridX: 110, gridY: 4, direction: -1 },
+      { gridX: 118, gridY: 4, direction: -1 },
+      { gridX: 120, gridY: 4, direction: -1 },
+      { gridX: 123, gridY: 4, direction: -1 },
+      { gridX: 125, gridY: 4, direction: -1 },
       { gridX: 166, gridY: 4, direction: -1 },
       { gridX: 167, gridY: 4, direction: 1 },
     ];
@@ -136,7 +145,7 @@ export class Level {
     this.greenTurtlePositions = [
       { gridX: 10, gridY: 5, direction: 1 },
       { gridX: 48, gridY: 4, direction: -1 },
-      { gridX: 105, gridY: 4, direction: 1 },
+      { gridX: 101, gridY: 4, direction: -1 },
     ];
 
     // Finishing pole position (near end of level)
@@ -153,13 +162,9 @@ export class Level {
     this.createStairs(); // Add stairs to reach the top of the pole
 
 
-    // Add Goombas
+    // Initialize empty arrays for enemies - we'll spawn them dynamically
     this.goombas = [];
-    this.createGoombas();
-
-    // Add Green Turtles
     this.greenTurtles = [];
-    this.createGreenTurtles();
   }
 
   createGreenPipes() {
@@ -282,6 +287,47 @@ export class Level {
     });
   }
 
+  // New method to check if enemies should spawn based on Mario's proximity
+  checkEnemySpawning(playerX: number) {
+    const spawnDistance = 800; // Distance in pixels to trigger enemy spawning
+    const newEnemies = { goombas: [], greenTurtles: [] };
+
+    // Check for goombas that need to be spawned
+    this.goombaPositions = this.goombaPositions.filter((pos) => {
+      const goombaX = pos.gridX * this.blockSize;
+
+      // Only spawn if Mario is approaching (not too far and not already passed)
+      if (goombaX > playerX && goombaX < playerX + spawnDistance) {
+        // This calculates the correct Y position on the ground
+        const y = this.scene.scale.height - ((pos.gridY) * this.blockSize);
+        const goomba = new Goomba(this.scene, goombaX, y, pos.direction);
+        this.goombas.push(goomba);
+        newEnemies.goombas.push(goomba);
+        return false; // Remove from positions array after spawning
+      }
+      return true; // Keep in the array for future checks
+    });
+
+    // Check for green turtles that need to be spawned
+    this.greenTurtlePositions = this.greenTurtlePositions.filter((pos) => {
+      const turtleX = pos.gridX * this.blockSize;
+
+      // Only spawn if Mario is approaching (not too far and not already passed)
+      if (turtleX > playerX && turtleX < playerX + spawnDistance) {
+        // This calculates the correct Y position on the ground
+        const y = this.scene.scale.height - ((pos.gridY) * this.blockSize);
+        const greenTurtle = new GreenTurtle(this.scene, turtleX, y, pos.direction);
+        this.greenTurtles.push(greenTurtle);
+        newEnemies.greenTurtles.push(greenTurtle);
+        return false; // Remove from positions array after spawning
+      }
+      return true; // Keep in the array for future checks
+    });
+
+    // Return any newly spawned enemies so we can set up their collisions
+    return newEnemies;
+  }
+
   createFinishingPole() {
     // Create texture for pole if it doesn't exist
     if (!this.scene.textures.exists('poleTexture')) {
@@ -296,10 +342,10 @@ export class Level {
     const poleX = this.finishingPolePosition * this.blockSize;
     const groundY = this.scene.scale.height - (2 * this.blockSize); // Adjusted for double-height ground
     const poleHeight = this.blockSize * 10; // Increased height by 2 blocks
-    
+
     // Create a stair block under the pole
     this.platforms.group
-      .create(poleX - 8, groundY - this.blockSize/2, 'stairs-block')
+      .create(poleX - 8, groundY - this.blockSize / 2, 'stairs-block')
       .setOrigin(0, 0.5)
       .setScale(2.0)
       .refreshBody();
@@ -313,17 +359,17 @@ export class Level {
       groundY - this.blockSize - poleHeight, // Top of pole
       'flag-orb'
     ).setScale(2.0);
-    
+
     // Create the flag as a physics object for collision detection
     this.flag = this.scene.physics.add.sprite(
-      poleX-8, // Offset to right of pole
+      poleX - 8, // Offset to right of pole
       groundY - this.blockSize - poleHeight + 24, // Just below the orb
       'flag'
     ).setScale(2.0);
-    
+
     this.flag.body.allowGravity = false;
     this.flag.isFlag = true; // Mark this object as a flag for collision handling
-    
+
     // Make the flag collision area more balanced - large enough to detect collision but not too large
     this.flag.body.setSize(4, 100); // Adjusted size for reliable collision detection
     this.flag.body.setOffset(12, 0); // Offset to better align with the flag graphic
@@ -333,12 +379,12 @@ export class Level {
     // Castle is 80x80 pixels, with scale 2.0 it becomes 160x160 pixels
     // Position it so that it sits perfectly on the ground level
     this.castle = this.scene.add.sprite(
-      poleX + (this.blockSize * 7), 
-      groundY, 
+      poleX + (this.blockSize * 7),
+      groundY,
       'castle'
     )
-    .setScale(2.0)    // Scale to match the game's pixel art style
-    .setOrigin(0.5, 1); // Set origin to bottom center so it sits perfectly on ground
+      .setScale(2.0)    // Scale to match the game's pixel art style
+      .setOrigin(0.5, 1); // Set origin to bottom center so it sits perfectly on ground
   }
 
   createStairs() {

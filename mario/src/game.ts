@@ -113,7 +113,7 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 6000, 450 - 32); // Adjusted spawn height for double-height ground
+  player = new Mario(this, 2700, 450 - 32); // Adjusted spawn height for double-height ground
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);
@@ -181,6 +181,14 @@ function update(this: Phaser.Scene) {
 
   player.update(cursors);
 
+  // Check if new enemies should spawn based on Mario's position
+  const newEnemies = level.checkEnemySpawning(player.sprite.x);
+  
+  // Set up collisions for any newly spawned enemies
+  if (newEnemies.goombas.length > 0 || newEnemies.greenTurtles.length > 0) {
+    setupNewEnemyCollisions.call(this, newEnemies);
+  }
+
   // Update all goombas
   level.goombas.forEach((goomba) => goomba.update());
   
@@ -192,6 +200,63 @@ function update(this: Phaser.Scene) {
     // Mario fell off the bottom of the screen
     endGame.call(this);
   }
+}
+
+// Helper function to set up collisions for newly spawned enemies
+function setupNewEnemyCollisions(this: Phaser.Scene, newEnemies: { goombas: any[], greenTurtles: any[] }) {
+  // Setup Goomba collisions
+  newEnemies.goombas.forEach((goomba) => {
+    // Goombas collide with platforms
+    this.physics.add.collider(goomba.sprite, level.platforms.group);
+    
+    // Goomba & Player collision - handled inside Goomba class
+    this.physics.add.collider(player.sprite, goomba.sprite, (playerSprite, goombaSprite) => {
+      goomba.handlePlayerCollision(playerSprite, player, () => {
+        score += 50;
+        scoreText.setText('Score: ' + score);
+      }, endGame.bind(this));
+    }, undefined, this);
+
+    // Collide goombas with each other
+    level.goombas.forEach((otherGoomba) => {
+      if (otherGoomba !== goomba) {
+        this.physics.add.collider(goomba.sprite, otherGoomba.sprite, function (goombaSprite1, goombaSprite2) {
+          goomba.handleGoombaCollision(goombaSprite1, goombaSprite2);
+        }, undefined, this);
+      }
+    });
+    
+    // Collide with green turtles
+    level.greenTurtles.forEach((greenTurtle) => {
+      this.physics.add.collider(goomba.sprite, greenTurtle.sprite);
+    });
+  });
+  
+  // Setup Green Turtle collisions
+  newEnemies.greenTurtles.forEach((greenTurtle) => {
+    // Green Turtles collide with platforms
+    this.physics.add.collider(greenTurtle.sprite, level.platforms.group);
+    
+    // Green Turtle & Player collision - handled inside GreenTurtle class
+    this.physics.add.collider(player.sprite, greenTurtle.sprite, (playerSprite, turtleSprite) => {
+      greenTurtle.handlePlayerCollision(playerSprite as Phaser.Physics.Arcade.Sprite, player, () => {
+        score += 100;
+        scoreText.setText('Score: ' + score);
+      }, endGame.bind(this));
+    }, undefined, this);
+    
+    // Green Turtles collide with Goombas
+    level.goombas.forEach((goomba) => {
+      this.physics.add.collider(greenTurtle.sprite, goomba.sprite);
+    });
+    
+    // Green Turtles collide with each other
+    level.greenTurtles.forEach((otherTurtle) => {
+      if (otherTurtle !== greenTurtle) {
+        this.physics.add.collider(greenTurtle.sprite, otherTurtle.sprite);
+      }
+    });
+  });
 }
 
 function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
