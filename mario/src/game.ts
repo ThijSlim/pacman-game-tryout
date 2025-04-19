@@ -113,7 +113,7 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 2700, 450 - 32); // Adjusted spawn height for double-height ground
+  player = new Mario(this, 100, 450 - 32); // Adjusted spawn height for double-height ground
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);

@@ -126,7 +126,7 @@ export class Level {
       { gridX: 25, gridY: 4, direction: 1 },
       { gridX: 42, gridY: 4, direction: -1 },
       { gridX: 52, gridY: 4, direction: 1 },
-      { gridX: 53, gridY: 4, direction: -1 },
+      { gridX: 54, gridY: 4, direction: -1 },
       { gridX: 83, gridY: 12, direction: -1 },
       { gridX: 85, gridY: 12, direction: -1 },
       { gridX: 92, gridY: 4, direction: -1 },
@@ -143,8 +143,6 @@ export class Level {
 
     // Green Turtle positions: {gridX, gridY, direction}
     this.greenTurtlePositions = [
-      { gridX: 10, gridY: 5, direction: 1 },
-      { gridX: 48, gridY: 4, direction: -1 },
       { gridX: 101, gridY: 4, direction: -1 },
     ];
 

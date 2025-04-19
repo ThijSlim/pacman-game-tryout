@@ -37,6 +37,10 @@ export class GreenTurtle {
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setVelocityX(this.speed * this.direction);
     this.sprite.anims.play('greenTurtleWalking');
+    
+    // Set the correct flip state based on direction
+    // If direction is -1 (left), flip the sprite; if 1 (right), don't flip
+    this.sprite.setFlipX(this.direction === -1);
 
     this.sprite?.body.setSize(16, 23);
 
