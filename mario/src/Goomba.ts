@@ -85,7 +85,7 @@ export class Goomba {
       if (onStompedCallback) onStompedCallback();
       
       // Remove the goomba after showing the dead sprite for a moment
-      this.scene.time.delayedCall(800, () => {
+      this.scene.time.delayedCall(200, () => {
         if (this.sprite && this.sprite.body) {
           this.sprite.destroy();
         }

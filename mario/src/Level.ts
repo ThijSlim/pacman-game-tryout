@@ -95,6 +95,9 @@ export class Level {
       [121, 7, 1, 'platformBlock'],
       [122, 3, 2, 'platformBlock'],
       [124, 7, 1, 'platformBlock'],
+      [162, 3, 1, 'platformBlock'],
+      [163, 3, 1, 'platformBlock'],
+      [165, 3, 1, 'platformBlock'],
     ];
 
 
@@ -113,6 +116,8 @@ export class Level {
       [107, 3, 'coin'],
       [122, 7, 'coin'],
       [123, 7, 'coin'],
+      [164, 3, 'coin'],
+
 
     ];
 
@@ -278,35 +283,49 @@ export class Level {
   }
 
   createFinishingPole() {
-    // Create textures for flag and pole if they don't exist
+    // Create texture for pole if it doesn't exist
     if (!this.scene.textures.exists('poleTexture')) {
       const poleGraphics = this.scene.add.graphics();
-      poleGraphics.fillStyle(0xC0C0C0, 1); // Silver color
-      poleGraphics.fillRect(0, 0, 8, this.blockSize * 8);
-      poleGraphics.generateTexture('poleTexture', 8, this.blockSize * 8);
+      poleGraphics.fillStyle(0x70cb11, 1); // Green color (#70cb11)
+      poleGraphics.fillRect(0, 0, 4, this.blockSize * 10); // 4 pixels wide
+      poleGraphics.generateTexture('poleTexture', 4, this.blockSize * 10);
       poleGraphics.destroy();
-    }
-
-    if (!this.scene.textures.exists('flagTexture')) {
-      const flagGraphics = this.scene.add.graphics();
-      flagGraphics.fillStyle(0x008000, 1); // Green flag
-      flagGraphics.fillRect(0, 0, 32, 32);
-      flagGraphics.generateTexture('flagTexture', 32, 32);
-      flagGraphics.destroy();
     }
 
     // Position the flag at the top of the pole
     const poleX = this.finishingPolePosition * this.blockSize;
     const groundY = this.scene.scale.height - (2 * this.blockSize); // Adjusted for double-height ground
-    const poleHeight = this.blockSize * 8;
+    const poleHeight = this.blockSize * 10; // Increased height by 2 blocks
+    
+    // Create a stair block under the pole
+    this.platforms.group
+      .create(poleX - 8, groundY - this.blockSize/2, 'stairs-block')
+      .setOrigin(0, 0.5)
+      .setScale(2.0)
+      .refreshBody();
 
-    // Create the pole (static, not collidable)
-    this.pole = this.scene.add.sprite(poleX, groundY - poleHeight / 2, 'poleTexture');
+    // Create the pole (static, not collidable) - now 2 blocks higher and on a stair block
+    this.pole = this.scene.add.sprite(poleX + 8, groundY - this.blockSize - poleHeight / 2, 'poleTexture');
 
+    // Create the flag orb at the top of the pole
+    const flagOrb = this.scene.add.sprite(
+      poleX + 8, // Same x as pole
+      groundY - this.blockSize - poleHeight, // Top of pole
+      'flag-orb'
+    ).setScale(2.0);
+    
     // Create the flag as a physics object for collision detection
-    this.flag = this.scene.physics.add.sprite(poleX + 16, groundY - poleHeight + 16, 'flagTexture');
+    this.flag = this.scene.physics.add.sprite(
+      poleX-8, // Offset to right of pole
+      groundY - this.blockSize - poleHeight + 24, // Just below the orb
+      'flag'
+    ).setScale(2.0);
+    
     this.flag.body.allowGravity = false;
     this.flag.isFlag = true; // Mark this object as a flag for collision handling
+    
+    // Make the flag collision area taller to allow grabbing it from the middle
+    this.flag.body.setSize(32, poleHeight); // Set collision height to full pole height
 
 
     // Create a small castle at the end

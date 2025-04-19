@@ -58,6 +58,10 @@ function preload(this: Phaser.Scene) {
   // Load the background image
   this.load.image('background', 'background/repeated-background.png');
   
+  // Load the flag sprites
+  this.load.image('flag-orb', 'flag/flag-orb.png');
+  this.load.image('flag', 'flag/flag.png');
+  
   // Load the pipe sprites
   this.load.image('pipe-small', 'pipes/pipe-small.png');
   this.load.image('pipe-medium', 'pipes/pipe-medium.png');
@@ -106,7 +110,7 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 5150, 450 - 32); // Adjusted spawn height for double-height ground
+  player = new Mario(this, 6000, 450 - 32); // Adjusted spawn height for double-height ground
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);
