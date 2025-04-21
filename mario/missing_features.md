@@ -3,11 +3,9 @@
 ## Missing Features Compared to Mario Bros 1-1
 
 ### 1. Enemy Behaviors
-- Green Turtles do not throw hammers as described in the prompts.
 - No implementation of kicked shells interacting with other objects or enemies.
 
 ### 2. Level Details
-- Missing specific level decorations like bushes or clouds.
 - No underground or bonus areas accessible via pipes.
 
 ### 3. Player Mechanics
