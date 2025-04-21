@@ -103,6 +103,11 @@ export class Mario {
     if (cursors.up.isDown && isOnGround) {
       this.sprite.setVelocityY(-876);
       this.sprite.anims.play('jumping');
+      // Play jump sound
+      const jumpSound = this.scene.sound.get('jump');
+      if (jumpSound) {
+        jumpSound.play();
+      }
     }
   }
 

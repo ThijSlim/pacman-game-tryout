@@ -28,6 +28,16 @@ let gameOver = false;
 let levelCompleted = false;
 let level: Level;
 
+// Sound objects
+let sounds: {
+  jump?: Phaser.Sound.BaseSound,
+  coin?: Phaser.Sound.BaseSound,
+  powerUp?: Phaser.Sound.BaseSound,
+  powerUpAppears?: Phaser.Sound.BaseSound,
+  gameOver?: Phaser.Sound.BaseSound,
+  levelClear?: Phaser.Sound.BaseSound
+} = {};
+
 const game = new Phaser.Game(config as any);
 
 function preload(this: Phaser.Scene) {
@@ -73,10 +83,26 @@ function preload(this: Phaser.Scene) {
   this.load.spritesheet('power-up', 'items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
   this.load.image('coin', 'items/coin.png');
   this.load.image('star', 'items/star.png');
+  
+  // Load sound files
+  this.load.audio('jump', 'sound/jump-small.mp3');
+  this.load.audio('coin-sound', 'sound/coin.mp3');
+  this.load.audio('power-up-sound', 'sound/powerup.mp3');
+  this.load.audio('power-up-appears-sound', 'sound/powerup-appears.mp3');
+  this.load.audio('game-over', 'sound/gameover-1.mp3');
+  this.load.audio('level-clear', 'sound/level-clear.mp3');
 }
 
 function create(this: Phaser.Scene) {
   const worldWidth = 9000; // 3 times the original width
+
+  // Initialize sound objects
+  sounds.jump = this.sound.add('jump');
+  sounds.coin = this.sound.add('coin-sound');
+  sounds.powerUp = this.sound.add('power-up-sound');
+  sounds.powerUpAppears = this.sound.add('power-up-appears-sound');
+  sounds.gameOver = this.sound.add('game-over');
+  sounds.levelClear = this.sound.add('level-clear');
 
   const background = this.add.graphics();
   background.fillStyle(0x4b7ffc, 1); 
@@ -339,6 +365,11 @@ function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
   powerUp.setVelocityY(-100);
   powerUp.body.allowGravity = false;
 
+  // Play power-up appears sound
+  if (sounds.powerUpAppears) {
+    sounds.powerUpAppears.play();
+  }
+
   this.time.delayedCall(500, () => {
     powerUp.setVelocityY(0);
     powerUp.body.allowGravity = true;
@@ -351,6 +382,15 @@ function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
 function spawnCoin(this: Phaser.Scene, x: number, y: number) {
   const coin = this.physics.add.sprite(x, y, 'coin').setScale(2.0);
   coin.body.allowGravity = false;
+
+  // Play coin sound
+  if (sounds.coin) {
+    sounds.coin.play();
+  }
+
+  // Update score
+  score += 200;
+  scoreText.setText('Score: ' + score);
 
   this.tweens.add({
     targets: coin,
@@ -383,6 +423,11 @@ function collectStar(this: Phaser.Scene, playerSprite: any, star: { destroy: () 
 function collectPowerUp(this: Phaser.Scene, playerSprite: any, powerUp: { destroy: () => void; }) {
   powerUp.destroy();
 
+  // Play power-up sound
+  if (sounds.powerUp) {
+    sounds.powerUp.play();
+  }
+
   var scaleFactor = 1.5;
   var speedFactor = 1.5;
 
@@ -403,6 +448,11 @@ function endGame(this: Phaser.Scene) {
   gameOver = true;
   player.sprite.setTint(0xff0000);
 
+  // Play game over sound
+  if (sounds.gameOver) {
+    sounds.gameOver.play();
+  }
+
   this.physics.pause();
   const gameOverText = this.add.text(
     this.cameras.main.midPoint.x,
@@ -416,6 +466,11 @@ function endGame(this: Phaser.Scene) {
 function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
   if (levelCompleted) return;
   levelCompleted = true;
+  
+  // Play level clear sound
+  if (sounds.levelClear) {
+    sounds.levelClear.play();
+  }
 
   // Store blockSize for proper positioning
   const blockSize = level.blockSize;
