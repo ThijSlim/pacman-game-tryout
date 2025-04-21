@@ -81,6 +81,12 @@ export class Goomba {
       this.sprite.body.setSize(this.sprite.width * 0.8, this.sprite.height * 0.5);
       this.sprite.body.setOffset(this.sprite.width * 0.1, this.sprite.height * 0.5);
       
+      // Play stomp sound effect
+      const audioManager = (this.scene as any).audioManager || this.scene.scene.get('default').audioManager;
+      if (audioManager) {
+        audioManager.play('stomp');
+      }
+      
       playerSprite.setVelocityY(-876);
       if (onStompedCallback) onStompedCallback();
       

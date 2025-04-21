@@ -103,6 +103,12 @@ export class Mario {
     if (cursors.up.isDown && isOnGround) {
       this.sprite.setVelocityY(-876);
       this.sprite.anims.play('jumping');
+      
+      // Play jump sound
+      const audioManager = (this.scene as any).audioManager || this.scene.scene.get('default').audioManager;
+      if (audioManager) {
+        audioManager.play('jump');
+      }
     }
   }
 
@@ -124,11 +130,18 @@ export class Mario {
       repeat: -1,
       duration: 100
     });
+    
     // Set timer to end invincibility
     this.invincibilityTimer = setTimeout(() => {
       this.isInvincible = false;
       this.scene.tweens.killTweensOf(this.sprite);
       this.sprite.alpha = 1;
+      
+      // Notify that invincibility has ended
+      const audioManager = (this.scene as any).audioManager || this.scene.scene.get('default').audioManager;
+      if (audioManager) {
+        audioManager.stopStarmanMusic();
+      }
     }, duration);
   }
 

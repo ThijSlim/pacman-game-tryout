@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { Mario } from "./Mario";
 import { Level } from "./Level";
+import { AudioManager } from "./AudioManager";
 
 const config = {
   type: Phaser.AUTO,
@@ -27,10 +28,17 @@ let scoreText: Phaser.GameObjects.Text;
 let gameOver = false;
 let levelCompleted = false;
 let level: Level;
+let audioManager: AudioManager;
 
 const game = new Phaser.Game(config as any);
 
 function preload(this: Phaser.Scene) {
+  // Initialize the audio manager
+  audioManager = new AudioManager(this);
+  
+  // Preload all audio files
+  audioManager.preloadSounds();
+  
   this.load.image('mario-default', 'mario/mario-default.png');
   this.load.image('mario-running', 'mario/mario-running.png');
   this.load.image('mario-jumping', 'mario/mario-jumping.png');
@@ -77,6 +85,10 @@ function preload(this: Phaser.Scene) {
 
 function create(this: Phaser.Scene) {
   const worldWidth = 9000; // 3 times the original width
+
+  // Initialize audio manager and start playing background music
+  audioManager.initSounds();
+  audioManager.playBackgroundMusic();
 
   const background = this.add.graphics();
   background.fillStyle(0x4b7ffc, 1); 
@@ -297,6 +309,11 @@ function breakBlock(this: Phaser.Scene, block: { x: any; y: any; destroy: () => 
   const x = block.x;
   const y = block.y;
 
+  // Play break block sound effect
+  if (audioManager) {
+    audioManager.play('break-block');
+  }
+
   block.destroy();
 
   const debrisCount = 4;
@@ -333,6 +350,11 @@ function breakBlock(this: Phaser.Scene, block: { x: any; y: any; destroy: () => 
 }
 
 function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
+  // Play power-up appears sound
+  if (audioManager) {
+    audioManager.play('powerup-appears');
+  }
+
   // Create the power-up using the correct sprite from the sprite sheet
   const powerUp = this.physics.add.sprite(x, y, 'power-up', 0); // Use frame 0 for now
   powerUp.setScale(2.0);
@@ -351,6 +373,11 @@ function spawnPowerUp(this: Phaser.Scene, x: number, y: number) {
 function spawnCoin(this: Phaser.Scene, x: number, y: number) {
   const coin = this.physics.add.sprite(x, y, 'coin').setScale(2.0);
   coin.body.allowGravity = false;
+
+  // Play coin sound effect
+  if (audioManager) {
+    audioManager.play('coin');
+  }
 
   this.tweens.add({
     targets: coin,
@@ -377,11 +404,27 @@ function spawnStar(this: Phaser.Scene, x: number, y: number) {
 
 function collectStar(this: Phaser.Scene, playerSprite: any, star: { destroy: () => void; }) {
   star.destroy();
-  player.startInvincibility();
+  
+  // Play starman music - this stops the regular background music
+  if (audioManager) {
+    audioManager.playStarmanMusic();
+  }
+  
+  // Start invincibility - passing a callback to stop the starman music when invincibility ends
+  player.startInvincibility(10000, () => {
+    if (audioManager) {
+      audioManager.stopStarmanMusic();
+    }
+  });
 }
 
 function collectPowerUp(this: Phaser.Scene, playerSprite: any, powerUp: { destroy: () => void; }) {
   powerUp.destroy();
+
+  // Play power-up collection sound
+  if (audioManager) {
+    audioManager.play('powerup-collect');
+  }
 
   var scaleFactor = 1.5;
   var speedFactor = 1.5;
@@ -403,6 +446,12 @@ function endGame(this: Phaser.Scene) {
   gameOver = true;
   player.sprite.setTint(0xff0000);
 
+  // Play game over sound
+  if (audioManager) {
+    audioManager.stopBackgroundMusic(); // Stop the background music
+    audioManager.play('game-over');
+  }
+
   this.physics.pause();
   const gameOverText = this.add.text(
     this.cameras.main.midPoint.x,
@@ -416,6 +465,12 @@ function endGame(this: Phaser.Scene) {
 function reachFinishingPole(this: Phaser.Scene, playerSprite: any, flag: any) {
   if (levelCompleted) return;
   levelCompleted = true;
+  
+  // Play level complete sound
+  if (audioManager) {
+    audioManager.stopBackgroundMusic(); // Stop the background music
+    audioManager.play('level-clear');
+  }
 
   // Store blockSize for proper positioning
   const blockSize = level.blockSize;
