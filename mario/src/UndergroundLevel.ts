@@ -23,12 +23,13 @@ export class UndergroundLevel extends Phaser.Scene {
   }
 
   create() {
-    // Create dark background for underground level
-    this.add.rectangle(0, 0, this.scale.width * 2, this.scale.height, 0x000000)
+    // Create dark background for underground level - constrained to game width
+    this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000)
       .setOrigin(0, 0)
       .setDepth(-2);
 
-    const worldWidth = this.scale.width * 2;
+    // Use game width (no horizontal scrolling)
+    const worldWidth = this.scale.width;
 
     // Create blue-brick ceiling
     for (let x = 0; x < Math.ceil(worldWidth / this.blockSize); x++) {
@@ -39,20 +40,32 @@ export class UndergroundLevel extends Phaser.Scene {
     }
 
     // Create blue-brick walls on left and right
-    // Left wall
+    // Left wall - using physics bodies so Mario can't walk through
     for (let y = 1; y < Math.ceil(this.scale.height / this.blockSize) - 2; y++) {
-      this.add.image(0, y * this.blockSize, 'brick-block')
-        .setOrigin(0, 0)
-        .setScale(2.0)
-        .setTint(0x000066);
+      const block = this.physics.add.staticImage(
+        0,
+        y * this.blockSize,
+        'brick-block'
+      )
+      .setOrigin(0, 0)
+      .setScale(2.0)
+      .setTint(0x000066);
+      
+      this.platforms.group.add(block);
     }
     
-    // Right wall
+    // Right wall - using physics bodies so Mario can't walk through
     for (let y = 1; y < Math.ceil(this.scale.height / this.blockSize) - 2; y++) {
-      this.add.image(worldWidth - this.blockSize, y * this.blockSize, 'brick-block')
-        .setOrigin(0, 0)
-        .setScale(2.0)
-        .setTint(0x000066);
+      const block = this.physics.add.staticImage(
+        worldWidth - this.blockSize * 2,
+        y * this.blockSize,
+        'brick-block'
+      )
+      .setOrigin(0, 0)
+      .setScale(2.0)
+      .setTint(0x000066);
+      
+      this.platforms.group.add(block);
     }
 
     // Create blue-brick floor all the way
@@ -112,17 +125,22 @@ export class UndergroundLevel extends Phaser.Scene {
       }
     }
 
-    // Create big green pipe on the right for exit
+    // Create horizontal green pipe on the right side for exit
     this.exitPipe = this.physics.add.sprite(
-      worldWidth - 150, 
-      this.scale.height - 2 * this.blockSize, 
+      worldWidth - this.blockSize * 4, 
+      this.scale.height - 4 * this.blockSize, 
       'pipe-large'
     )
-      .setOrigin(0, 1)
+      .setOrigin(0, 0)
       .setScale(2.0)
-      .setImmovable(true);
+      .setImmovable(true)
+      .setAngle(90); // Rotate to make it horizontal
     this.exitPipe.body.allowGravity = false;
     this.exitPipe.isExitPipe = true;
+    
+    // Adjust the pipe's collision body to match its rotation
+    this.exitPipe.body.setSize(64, 32);
+    this.exitPipe.body.setOffset(0, 16);
 
     // Add score text
     this.scoreText = this.add.text(16, 16, 'Score: ' + this.score, {
@@ -135,10 +153,8 @@ export class UndergroundLevel extends Phaser.Scene {
     this.physics.add.collider(this.player.sprite, this.platforms.group);
     this.physics.add.collider(this.player.sprite, this.exitPipe, this.checkPipeExit, undefined, this);
 
-    // Setup camera
-    this.cameras.main.setBounds(0, 0, worldWidth, this.scale.height);
-    this.cameras.main.startFollow(this.player.sprite);
-
+    // No camera following needed since level is constrained to screen width
+    
     // Create a keyboard input for the down key
     this.input.keyboard?.createCursorKeys();
   }
@@ -154,7 +170,8 @@ export class UndergroundLevel extends Phaser.Scene {
   }
 
   checkPipeExit(_player: any, pipe: any) {
-    if (pipe.isExitPipe && this.input.keyboard?.createCursorKeys().down?.isDown) {
+    // For horizontal pipe, use RIGHT key instead of DOWN
+    if (pipe.isExitPipe && this.input.keyboard?.createCursorKeys().right?.isDown) {
       this.returnToMainLevel();
     }
   }
