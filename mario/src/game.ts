@@ -326,6 +326,9 @@ function enterPipe(this: Phaser.Scene, pipe: any) {
   player.sprite.setVelocity(0, 0);
   player.sprite.x = pipe.x + (32 * 2) / 2;
   
+  // Play pipe entry animation
+  player.sprite.anims.play('pipe-enter');
+  
   // Play an animation of Mario going down the pipe
   this.tweens.add({
     targets: player.sprite,
