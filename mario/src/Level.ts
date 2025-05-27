@@ -9,6 +9,7 @@ export class Level {
   blockSize: number;
   holes: number[][];
   pipePositions: number[][];
+  enterablePipes: number[];
   platformRows: (string | number)[][];
   stairBlocks: number[][];
   questionBlocks: (string | number)[][];
@@ -21,6 +22,8 @@ export class Level {
   pole: any;
   flag: any;
   castle: any;
+  pipes: any[] = [];
+  
   constructor(scene: Phaser.Scene, worldWidth: number) {
     this.scene = scene;
     this.blockSize = 32;
@@ -42,6 +45,9 @@ export class Level {
       [157, 2],
       [174, 2],
     ];
+    
+    // Mark which pipes are enterable (by array index in pipePositions)
+    this.enterablePipes = [1]; // Second pipe (index 1) is enterable
 
 
     // Stairs configuration near the finishing pole - extended for longer runway
@@ -167,12 +173,13 @@ export class Level {
 
   createGreenPipes() {
     // Use the pipePositions array defined at the top
-    this.pipePositions.forEach(([gridX, heightInBlocks]) => {
-      this.createPipeAtGrid(gridX, heightInBlocks);
+    this.pipePositions.forEach(([gridX, heightInBlocks], index) => {
+      const isEnterable = this.enterablePipes.includes(index);
+      this.createPipeAtGrid(gridX, heightInBlocks, isEnterable);
     });
   }
 
-  createPipeAtGrid(gridX: number, heightInBlocks: number) {
+  createPipeAtGrid(gridX: number, heightInBlocks: number, isEnterable: boolean = false) {
     const x = gridX * this.blockSize;
     const groundY = this.scene.scale.height - (2 * this.blockSize); // Adjusted for double-height ground
 
@@ -201,6 +208,13 @@ export class Level {
       .setOrigin(0, 1)
       .setScale(2.0)  // Scale up from 16px to 32px
       .refreshBody();
+    
+    // Add additional properties for enterable pipes
+    pipe.isEnterable = isEnterable;
+    pipe.gridX = gridX;
+    
+    // Store reference to the pipe
+    this.pipes.push(pipe);
 
     // Ensure the pipe sprite has proper collision body
     if (heightInBlocks === 3) {
