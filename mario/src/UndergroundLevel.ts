@@ -28,41 +28,101 @@ export class UndergroundLevel extends Phaser.Scene {
       .setOrigin(0, 0)
       .setDepth(-2);
 
+    const worldWidth = this.scale.width * 2;
+
     // Create blue-brick ceiling
-    for (let x = 0; x < 50; x++) {
+    for (let x = 0; x < Math.ceil(worldWidth / this.blockSize); x++) {
       this.add.image(x * this.blockSize, 0, 'brick-block')
         .setOrigin(0, 0)
         .setScale(2.0)
         .setTint(0x000066);
     }
 
-    // Create platforms (floor)
-    const worldWidth = this.scale.width * 2;
+    // Create blue-brick walls on left and right
+    // Left wall
+    for (let y = 1; y < Math.ceil(this.scale.height / this.blockSize) - 2; y++) {
+      this.add.image(0, y * this.blockSize, 'brick-block')
+        .setOrigin(0, 0)
+        .setScale(2.0)
+        .setTint(0x000066);
+    }
+    
+    // Right wall
+    for (let y = 1; y < Math.ceil(this.scale.height / this.blockSize) - 2; y++) {
+      this.add.image(worldWidth - this.blockSize, y * this.blockSize, 'brick-block')
+        .setOrigin(0, 0)
+        .setScale(2.0)
+        .setTint(0x000066);
+    }
+
+    // Create blue-brick floor all the way
     this.platforms = new Platforms(this, worldWidth, this.blockSize, []);
+    
+    // Change the color of the floor blocks to blue
+    this.platforms.group.getChildren().forEach((block: any) => {
+      block.setTint(0x000066);
+    });
 
     // Create player (Mario)
     this.player = new Mario(this, 100, 400);
     
-    // Create exit pipe
-    this.exitPipe = this.physics.add.sprite(300, this.scale.height - 2 * this.blockSize, 'pipe-small')
+    // Create blue brick platform under the coins at the center
+    const platformWidth = 7 * this.blockSize; // Width for 7 blocks
+    const platformX = (worldWidth - platformWidth) / 2; // Center the platform
+    const platformY = this.scale.height / 2 + 30; // Position in the middle of the screen with slight offset
+
+    // Create the platform (7 blocks wide)
+    for (let i = 0; i < 7; i++) {
+      const block = this.physics.add.staticImage(
+        platformX + (i * this.blockSize),
+        platformY,
+        'brick-block'
+      )
+      .setOrigin(0, 0)
+      .setScale(2.0)
+      .setTint(0x000066);
+      
+      // Add to the platform group for collisions
+      this.platforms.group.add(block);
+    }
+
+    // Create three rows of five coins each
+    const coinStartX = (worldWidth - (5 * 50)) / 2; // Center the coins
+    const coinSpacing = 50; // Space between each coin
+    
+    // Create 3 rows of coins
+    for (let row = 0; row < 3; row++) {
+      const rowY = platformY - (120 - row * 40); // Position above the platform with spacing
+      
+      // Create 5 coins in this row
+      for (let col = 0; col < 5; col++) {
+        const coin = this.physics.add.sprite(
+          coinStartX + (col * coinSpacing),
+          rowY,
+          'coin'
+        ).setScale(2.0);
+        
+        coin.body.allowGravity = false;
+        
+        this.physics.add.overlap(this.player.sprite, coin, () => {
+          coin.destroy();
+          this.score += 10;
+          this.scoreText.setText('Score: ' + this.score);
+        });
+      }
+    }
+
+    // Create big green pipe on the right for exit
+    this.exitPipe = this.physics.add.sprite(
+      worldWidth - 150, 
+      this.scale.height - 2 * this.blockSize, 
+      'pipe-large'
+    )
       .setOrigin(0, 1)
       .setScale(2.0)
       .setImmovable(true);
     this.exitPipe.body.allowGravity = false;
     this.exitPipe.isExitPipe = true;
-
-    // Add some coins for collection
-    for (let i = 0; i < 5; i++) {
-      const coin = this.physics.add.sprite(150 + i * 50, this.scale.height - 3 * this.blockSize, 'coin')
-        .setScale(2.0);
-      coin.body.allowGravity = false;
-      
-      this.physics.add.overlap(this.player.sprite, coin, () => {
-        coin.destroy();
-        this.score += 10;
-        this.scoreText.setText('Score: ' + this.score);
-      });
-    }
 
     // Add score text
     this.scoreText = this.add.text(16, 16, 'Score: ' + this.score, {
