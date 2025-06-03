@@ -1,3 +1,6 @@
+---
+mode: 'agent'
+---
 Your goal is to implement missing features in my mario game.
 
 1. Find the missing features inside the missing features file [Missing_Features.md](../../missing_features.md)
