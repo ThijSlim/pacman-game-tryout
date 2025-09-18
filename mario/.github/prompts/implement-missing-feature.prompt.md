@@ -1,5 +1,6 @@
 ---
 mode: 'agent'
+model: Claude Sonnet 4 (copilot)
 ---
 Your goal is to implement missing features in my mario game.
 

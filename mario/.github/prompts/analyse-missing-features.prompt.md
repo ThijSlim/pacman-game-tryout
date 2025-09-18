@@ -1,5 +1,6 @@
 ---
 mode: 'agent'
+model: Claude Sonnet 4 (copilot)
 ---
 My goal of this repository is re-creating the first level of mario bros 1-1. You task is to investigate if there is missing features in my game.
 
