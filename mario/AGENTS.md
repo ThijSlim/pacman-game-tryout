@@ -1,0 +1,1 @@
+- always use context7 and get latest phaser documentation
