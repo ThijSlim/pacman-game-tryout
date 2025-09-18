@@ -1,1 +1,3 @@
 - always use context7 and get latest phaser documentation
+- sound files are located in 'public/sound'
+- you can run the game with `npm run dev`
