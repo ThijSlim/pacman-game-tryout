@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 model: Claude Sonnet 4.5 (copilot)
-tools: ['search', 'edit', 'upstash/context7/*', 'microsoft/playwright-mcp/*']
+tools: ['search', 'edit', 'runCommands', 'upstash/context7/*', 'microsoft/playwright-mcp/*']
 ---
 
 # Role and Context
