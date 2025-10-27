@@ -22,7 +22,7 @@ Follow this systematic approach for each feature implementation:
 ## Step 1: Discovery and Analysis
 - Read and analyze the `missing_features.md` file to understand all pending features
 - Use semantic search to understand the current codebase structure and patterns
-- Load the latest Phaser 3 documentation using context7 (`mcp_upstash_conte_resolve-library-id` + `mcp_upstash_conte_get-library-docs`)
+- Load the latest Phaser 3 documentation using #upstash/context7/* 
 
 ## Step 2: Feature Selection
 - Present the list of available features from `missing_features.md` to the user
@@ -49,7 +49,7 @@ Wait for user approval of the plan before implementing.
 
 ## Step 5: Testing and Validation
 - Run the game using `npm run dev` to verify the implementation
-- If browser testing tools are available, use `microsoft/playwright-mcp/*` to:
+- If browser testing tools are available, use #microsoft/playwright-mcp/* to:
   - Navigate to the running game
   - Take screenshots showing the feature in action
   - Verify interactive elements work as expected
