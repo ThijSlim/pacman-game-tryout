@@ -123,7 +123,7 @@ export class Level {
 
     // Goomba positions: {gridX, gridY, direction}
     this.goombaPositions = [
-      { gridX: 25, gridY: 4, direction: 1 },
+      // { gridX: 25, gridY: 4, direction: 1 },
       { gridX: 42, gridY: 4, direction: -1 },
       { gridX: 52, gridY: 4, direction: 1 },
       { gridX: 54, gridY: 4, direction: -1 },
