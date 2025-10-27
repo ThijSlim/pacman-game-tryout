@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
-model: Claude Sonnet 4 (copilot)
-tools: ['search']
+model: Claude Sonnet 4.5 (copilot)
+tools: ['search', 'edit']
 ---
 
 # 🍄 Mario Bros 1-1 Feature Gap Analysis
