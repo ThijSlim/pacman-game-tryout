@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { Mario } from "./Mario";
 import { Level } from "./Level";
+import { UndergroundLevel } from "./UndergroundLevel";
 
 const config = {
   type: Phaser.AUTO,
@@ -13,11 +14,15 @@ const config = {
       debug: false,
     },
   },
-  scene: {
-    preload,
-    create,
-    update,
-  },
+  scene: [
+    {
+      key: 'MainLevel',
+      preload: preload,
+      create: create,
+      update: update,
+    },
+    UndergroundLevel
+  ],
 };
 
 let player: Mario;
@@ -73,9 +78,14 @@ function preload(this: Phaser.Scene) {
   this.load.spritesheet('power-up', 'items/power-ups.png', { frameWidth: 16, frameHeight: 16 });
   this.load.image('coin', 'items/coin.png');
   this.load.image('star', 'items/star.png');
+  
+  // This scene ID helps distinguish between MainLevel and UndergroundLevel
+  if (this.scene.key === 'MainLevel') {
+    this.scene.stop('UndergroundLevel');
+  }
 }
 
-function create(this: Phaser.Scene) {
+function create(this: Phaser.Scene, data: any) {
   const worldWidth = 9000; // 3 times the original width
 
   const background = this.add.graphics();
@@ -103,7 +113,10 @@ function create(this: Phaser.Scene) {
       .setScrollFactor(1); // Makes it static relative to the world (not the camera)
   }
 
-  scoreText = this.add.text(16, 16, 'Score: 0', {
+  // Initialize or restore score
+  score = data && data.score ? data.score : 0;
+  
+  scoreText = this.add.text(16, 16, 'Score: ' + score, {
     fontSize: '32px',
     color: '#000',
   });
@@ -113,7 +126,13 @@ function create(this: Phaser.Scene) {
 
   // Create and initialize the Level
   level = new Level(this, worldWidth);
-  player = new Mario(this, 100, 450 - 32); // Adjusted spawn height for double-height ground
+  
+  // If returning from underground, position player at the correct pipe
+  if (data && data.returnFromUnderground) {
+    player = new Mario(this, data.returnX, 450 - 32);
+  } else {
+    player = new Mario(this, 100, 450 - 32); // Adjusted spawn height for double-height ground
+  }
 
   // Make player collide with platforms
   this.physics.add.collider(player.sprite, level.platforms.group, hitBlock, undefined, this);
@@ -260,6 +279,12 @@ function setupNewEnemyCollisions(this: Phaser.Scene, newEnemies: { goombas: any[
 }
 
 function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
+  // Check if this is an enterable pipe and the down key is pressed
+  if (block.isEnterable && this.input.keyboard?.createCursorKeys().down?.isDown) {
+    enterPipe.call(this, block);
+    return;
+  }
+  
   if (playerSprite.body.touching.up && block.body.touching.down) {
     // If it's a coin block and not activated yet
     if (block.texture.key === 'coin-block-active' && !block.activated) {
@@ -291,6 +316,35 @@ function hitBlock(this: Phaser.Scene, playerSprite: any, block: any) {
       breakBlock.call(this, block);
     }
   }
+}
+
+function enterPipe(this: Phaser.Scene, pipe: any) {
+  // Prevent interacting with pipes during animations
+  if (player.sprite.anims.isPlaying && player.sprite.anims.currentAnim.key === 'pipe-enter') return;
+  
+  // Disable player controls and position the player at the center of the pipe
+  player.sprite.setVelocity(0, 0);
+  player.sprite.x = pipe.x + (32 * 2) / 2;
+  
+  // Play pipe entry animation
+  player.sprite.anims.play('pipe-enter');
+  
+  // Play an animation of Mario going down the pipe
+  this.tweens.add({
+    targets: player.sprite,
+    y: player.sprite.y + 64, // Move down into the pipe
+    scaleY: 0.5, // Squish Mario as he goes down
+    duration: 500,
+    onComplete: () => {
+      // Hide Mario
+      player.sprite.setVisible(false);
+      // Start the underground level scene
+      this.scene.start('UndergroundLevel', { 
+        returnX: pipe.gridX * level.blockSize,
+        score: score
+      });
+    }
+  });
 }
 
 function breakBlock(this: Phaser.Scene, block: { x: any; y: any; destroy: () => void; }) {

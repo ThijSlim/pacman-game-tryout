@@ -63,6 +63,14 @@ export class Mario {
       frameRate: 10,
       repeat: 0
     });
+    
+    // Pipe entry animation
+    this.scene.anims.create({
+      key: 'pipe-enter',
+      frames: [{ key: 'mario-default' }],
+      frameRate: 5,
+      repeat: 0
+    });
   }
 
   update(cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined) {
